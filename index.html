@@ -102,13 +102,7 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
 .ico-btn svg{ width:19px; height:19px; }
 
 /* progresso */
-.progresso{ padding:0 20px 12px; }
-.progresso-rot{
-  display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px;
-  font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.14em; text-transform:uppercase;
-  color:rgb(var(--muted));
-}
-.progresso-rot b{ color:rgb(var(--text)); font-weight:500; }
+.progresso{ padding:0 20px 14px; }
 .barra{ height:8px; border-radius:var(--raio-pill); background:var(--fill); overflow:hidden; }
 .barra i{
   display:block; height:100%; width:0%;
@@ -381,7 +375,6 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
       </div>
     </div>
     <div class="progresso">
-      <div class="progresso-rot"><b id="etapa">Boas-vindas</b><span id="pct">0%</span></div>
       <div class="barra"><i id="barra"></i></div>
     </div>
   </header>
@@ -1041,8 +1034,6 @@ function atualizarProgresso(passoAtual, tudoFeito = false){
   const feitos = tudoFeito ? total : lista.slice(0, estado.i).filter(interativo).length;
   const pct = total ? Math.round(feitos / total * 100) : 0;
   $('#barra').style.width = pct + '%';
-  $('#pct').textContent = pct + '%';
-  $('#etapa').textContent = tudoFeito ? 'Concluído' : (passoAtual && passoAtual.grupo) || grupoAtual;
 }
 
 /* ── Dados coletados (para plugar no app) ─────────── */
