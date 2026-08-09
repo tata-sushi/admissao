@@ -308,6 +308,10 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
 .chip.leve{ background:transparent; color:rgb(var(--muted)); }
 .chip.leve:hover{ background:var(--fill); color:rgb(var(--text)); }
 
+/* opções dentro do fluxo da conversa (não na barra de baixo) */
+.opcoes-inline{ margin-top:2px; margin-bottom:14px; }
+.opcoes-inline .chips{ justify-content:flex-end; max-width:min(92%,460px); }
+
 /* upload — padrão .icon-tile do app */
 .solta{
   display:flex; align-items:center; gap:14px; padding:16px;
@@ -766,6 +770,9 @@ async function rodar(){
 function montarPergunta(p){
   if (p.tipo === 'revisao') return 'Prontinho! Dá uma conferida em tudo antes de eu enviar para o RH — se algo estiver errado, é só tocar em <b>Editar</b>.';
   let h = p.pergunta;
+  /* a dica das opções entra na própria fala do bot (as opções agora ficam
+     inline, sem a barra de baixo onde a dica aparecia antes) */
+  if (p.dica && p.tipo === 'opcoes') h += `<span class="obs">${p.dica}</span>`;
   if (p.opcional && p.tipo === 'upload') h += '<span class="obs">Este é opcional — pode pular e mandar depois.</span>';
   return h;
 }
@@ -830,29 +837,34 @@ function comporTexto(p){
   }
 }
 
-/* ── Composer: opções ─────────────────────────────── */
-function comporOpcoes(p){
-  elComp.innerHTML = `
-    ${p.dica ? `<p class="dica">${p.dica}</p>` : ''}
-    <div class="chips">
-      ${p.opcoes.map((o, k) => `<button class="chip${o.principal ? ' principal' : ''}" data-k="${k}">${o.label}</button>`).join('')}
+/* ── Opções: renderizadas INLINE, no fluxo da conversa ─── */
+function chipsInline(opcoes, aoEscolher){
+  const linha = document.createElement('div');
+  linha.className = 'linha de-user opcoes-inline';
+  linha.innerHTML = `<div class="chips">
+      ${opcoes.map((o, k) => `<button class="chip${o.principal ? ' principal' : ''}" data-k="${k}">${o.label}</button>`).join('')}
     </div>`;
+  elMsgs.appendChild(linha); rolar();
+  linha.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => {
+    linha.remove();                       /* some com as opções ao escolher */
+    aoEscolher(opcoes[+b.dataset.k]);
+  }));
+}
 
-  elComp.querySelectorAll('.chip').forEach(b => b.addEventListener('click', async () => {
-    const o = p.opcoes[+b.dataset.k];
+function comporOpcoes(p){
+  /* a barra de baixo fica vazia (e some) — as opções vão para o fluxo */
+  chipsInline(p.opcoes, async (o) => {
     bolhaUser(o.label);
     estado.dados[p.campo] = o.v;
-    elComp.innerHTML = '';
     await espera(230);
 
     if (p.id === 'termo' && o.v === 'depois'){
       await falarBot('Tudo bem! Vou avisar o RH e alguém te chama no WhatsApp ainda hoje. Seus dados ficam salvos aqui.');
-      elComp.innerHTML = `<div class="chips"><button class="chip principal" id="voltar-termo">Ok, entendi</button></div>`;
-      $('#voltar-termo').addEventListener('click', () => { estado.i--; rodar(); });
+      chipsInline([{ v:'ok', label:'Ok, entendi', principal:true }], () => { estado.i--; rodar(); });
       return;
     }
     avancar();
-  }));
+  });
 }
 
 /* ── Composer: upload ─────────────────────────────── */
