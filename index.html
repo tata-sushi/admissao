@@ -8,13 +8,6 @@
 <title>Admissão — Tatá Sushi</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#F5F4F1">
-<script>
-  /* aplica o tema antes da 1ª pintura (evita flash) — mesmo esquema do app */
-  try {
-    var t = localStorage.getItem('tp_theme') === 'dark' ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', t);
-  } catch (e) {}
-</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Admissão Tatá">
@@ -46,25 +39,6 @@
   --raio-card:20px;
   --raio-pill:9999px;
 }
-:root[data-theme='dark']{
-  --bg:10 10 10;
-  --surface:20 20 20;
-  --surface-2:30 30 30;
-  --surface-3:42 42 42;
-  --border:42 42 42;
-  --line:rgba(255,255,255,.06);
-  --fill:rgba(255,255,255,.05);
-  --carbon:83 88 95;
-  --accent:112 255 65;       /* citric */
-  --accent-dim:79 214 40;
-  --accent-soft:rgba(112,255,65,.12);
-  --danger:239 68 68;
-  --warn:245 158 11;
-  --text:255 255 255;
-  --muted:156 163 175;
-  --muted-2:83 88 95;
-  --sobre-accent:10 10 10;
-}
 
 *,*::before,*::after{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 
@@ -86,12 +60,8 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
 .tap{ transition:transform .12s ease; }
 .tap:active{ transform:scale(.98); }
 
-/* logo por contraste — mesma convenção do app: .logo-dark é a marca usada NO
-   tema escuro (verde vivo) e .logo-light a do tema claro (verde fechado).
-   Aqui o padrão é o tema claro, então .logo-dark começa oculta. */
+/* modo claro fixo: usa sempre a marca fechada (verde escuro, legível no claro) */
 .logo-dark{ display:none; }
-:root[data-theme='dark'] .logo-dark{ display:block; }
-:root[data-theme='dark'] .logo-light{ display:none; }
 
 /* ══════════════════════════════════════════════════════════════
    ESTRUTURA — coluna única, como o app no celular
@@ -123,7 +93,6 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
   font-family:'DM Sans',sans-serif; font-size:16px; font-weight:600; letter-spacing:-.01em;
 }
 .marca .nome span{ color:rgb(var(--accent)); }
-.topo-acoes{ display:flex; align-items:center; gap:4px; flex:0 0 auto; }
 .ico-btn{
   width:36px; height:36px; border:none; border-radius:var(--raio-pill);
   background:transparent; color:rgb(var(--muted));
@@ -281,7 +250,6 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
   font-family:'DM Mono',monospace; font-size:14px; font-weight:500; letter-spacing:.1em;
   color:rgb(var(--accent-dim));
 }
-:root[data-theme='dark'] .final .protocolo{ color:rgb(var(--accent)); }
 .final .protocolo small{
   display:block; font-size:9px; letter-spacing:.18em; margin-bottom:5px; color:rgb(var(--muted-2));
 }
@@ -406,16 +374,6 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
         <img class="logo-dark" src="img/logo-mark.png" alt="Tatá">
         <img class="logo-light" src="img/logo-mark-light.png" alt="Tatá">
         <div class="nome">TATÁ<span> ADMISSÃO</span></div>
-      </div>
-      <div class="topo-acoes">
-        <button class="ico-btn tap" id="btn-tema" aria-label="Alternar tema">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="ico-tema"></svg>
-        </button>
-        <button class="ico-btn tap" id="btn-reiniciar" aria-label="Recomeçar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>
-          </svg>
-        </button>
       </div>
     </div>
     <div class="progresso">
@@ -667,24 +625,6 @@ const so = v => (v || '').replace(/\D/g, '');
 const elMsgs = $('#msgs'), elComp = $('#composer');
 
 let estado = { i:0, dados:{}, arquivos:{}, retorno:null, protocolo:null };
-
-/* ── Tema (mesmo esquema do app) ──────────────────── */
-const ICO_SOL  = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';
-const ICO_LUA  = '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>';
-
-function pintarTema(){
-  const escuro = document.documentElement.getAttribute('data-theme') === 'dark';
-  $('#ico-tema').innerHTML = escuro ? ICO_SOL : ICO_LUA;
-  const m = document.querySelector('meta[name="theme-color"]');
-  if (m) m.setAttribute('content', escuro ? '#0A0A0A' : '#F5F4F1');
-}
-$('#btn-tema').addEventListener('click', () => {
-  const novo = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', novo);
-  try { localStorage.setItem('tp_theme', novo); } catch (e) {}
-  pintarTema();
-});
-pintarTema();
 
 /* ── Máscaras ─────────────────────────────────────── */
 const MASCARAS = {
@@ -1126,7 +1066,6 @@ $('#copiar-json').addEventListener('click', async e => {
   catch { e.target.textContent = 'Selecione e copie'; }
   setTimeout(() => e.target.textContent = 'Copiar JSON', 1800);
 });
-$('#btn-reiniciar').addEventListener('click', reiniciar);
 
 function reiniciar(){
   Object.values(estado.arquivos).forEach(a => a.itens.forEach(i => i.url && URL.revokeObjectURL(i.url)));
