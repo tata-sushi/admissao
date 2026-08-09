@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Admissão — Tatá Sushi</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+:root{
+  --carbon:#35383F; --citric:#CFFF00;
+  --page-bg:#F4F4F4; --white:#FFFFFF; --border:#E2E2E2;
+  --t1:#111111; --t2:#555555; --t3:#999999;
+  --chat-bg:#FAFAFA;
+  --ok:#1F9254; --ok-bg:#E9F6EF;
+  --erro:#C0392B; --erro-bg:#FBEDEB;
+  --alerta:#8A6D00; --alerta-bg:#FBF6DC;
+  --raio:16px;
+  --sombra:0 1px 2px rgba(17,17,17,.04), 0 8px 24px rgba(17,17,17,.08);
+}
+
+html, body{
+  font-family:"DM Sans", sans-serif;
+  background:var(--page-bg);
+  color:var(--t1);
+  -webkit-font-smoothing:antialiased;
+  height:100%;
+}
+body{ overflow:hidden; }
+
+.mono{ font-family:"DM Mono", monospace; }
+
+/* ══════════════════════════════════════════════════
+   LAYOUT
+   ══════════════════════════════════════════════════ */
+.wrap{
+  height:100dvh;
+  max-width:1180px;
+  margin:0 auto;
+  padding:20px;
+  display:grid;
+  grid-template-columns:308px minmax(0,1fr);
+  gap:20px;
+}
+
+/* ── Painel lateral (acompanhamento) ─────────────── */
+.painel{
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--raio);
+  box-shadow:var(--sombra);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.painel-topo{ padding:20px 20px 16px; border-bottom:1px solid var(--border); }
+.painel-marca{ display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+.painel-marca .selo{
+  width:34px; height:34px; border-radius:9px; background:var(--carbon);
+  display:grid; place-items:center; flex:0 0 auto;
+}
+.painel-marca .selo img{ width:22px; height:22px; object-fit:contain; }
+.painel-marca h1{ font-size:15px; font-weight:700; line-height:1.15; letter-spacing:-.01em; }
+.painel-marca p{ font-family:"DM Mono",monospace; font-size:10px; color:var(--t3); text-transform:uppercase; letter-spacing:.12em; margin-top:2px; }
+
+.progresso-rot{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+.progresso-rot span:first-child{ font-family:"DM Mono",monospace; font-size:10px; text-transform:uppercase; letter-spacing:.12em; color:var(--t3); }
+.progresso-rot span:last-child{ font-size:13px; font-weight:700; }
+.barra{ height:6px; border-radius:99px; background:#EDEDED; overflow:hidden; }
+.barra i{ display:block; height:100%; width:0%; background:var(--carbon); border-radius:99px; transition:width .45s cubic-bezier(.4,0,.2,1); }
+
+.painel-corpo{ flex:1; overflow-y:auto; padding:18px 20px 20px; }
+.painel-titulo{
+  font-family:"DM Mono",monospace; font-size:10px; text-transform:uppercase;
+  letter-spacing:.12em; color:var(--t3); margin:0 0 10px;
+}
+.painel-corpo .painel-titulo + .grupo{ margin-top:0; }
+
+.grupo{ display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:10px; margin-bottom:2px; transition:background .2s; }
+.grupo.atual{ background:#F6F6F6; }
+.grupo .pino{
+  width:20px; height:20px; border-radius:50%; flex:0 0 auto;
+  border:1.5px solid var(--border); background:var(--white);
+  display:grid; place-items:center;
+}
+.grupo .pino svg{ width:11px; height:11px; display:none; }
+.grupo.feito .pino{ background:var(--carbon); border-color:var(--carbon); }
+.grupo.feito .pino svg{ display:block; stroke:var(--citric); }
+.grupo.atual .pino{ border-color:var(--carbon); border-width:2px; }
+.grupo.atual .pino::after{ content:""; width:7px; height:7px; border-radius:50%; background:var(--carbon); }
+.grupo .txt{ flex:1; min-width:0; }
+.grupo .txt b{ display:block; font-size:13px; font-weight:500; color:var(--t2); }
+.grupo.atual .txt b, .grupo.feito .txt b{ color:var(--t1); font-weight:600; }
+.grupo .cont{ font-family:"DM Mono",monospace; font-size:10px; color:var(--t3); }
+
+.docs{ margin-top:18px; }
+.doc{
+  display:flex; align-items:center; gap:9px; padding:8px 10px;
+  border:1px solid var(--border); border-radius:10px; margin-bottom:6px; background:var(--white);
+}
+.doc .ico{ width:16px; height:16px; flex:0 0 auto; stroke:var(--t3); }
+.doc .nome{ flex:1; min-width:0; font-size:12.5px; color:var(--t2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.doc .tag{
+  font-family:"DM Mono",monospace; font-size:9px; text-transform:uppercase; letter-spacing:.08em;
+  padding:3px 6px; border-radius:5px; background:#F0F0F0; color:var(--t3); flex:0 0 auto;
+}
+.doc.recebido{ border-color:#CFE6D9; background:var(--ok-bg); }
+.doc.recebido .nome{ color:var(--t1); }
+.doc.recebido .ico{ stroke:var(--ok); }
+.doc.recebido .tag{ background:var(--ok); color:#fff; }
+.doc.pulado .tag{ background:var(--alerta-bg); color:var(--alerta); }
+
+.painel-rodape{ border-top:1px solid var(--border); padding:12px 20px; display:flex; gap:8px; }
+.mini{
+  flex:1; font-family:"DM Mono",monospace; font-size:10px; text-transform:uppercase; letter-spacing:.08em;
+  padding:9px 10px; border-radius:9px; border:1px solid var(--border); background:var(--white);
+  color:var(--t2); cursor:pointer; transition:.18s;
+}
+.mini:hover{ background:var(--carbon); color:var(--citric); border-color:var(--carbon); }
+
+/* ── Chat ────────────────────────────────────────── */
+.chat{
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--raio);
+  box-shadow:var(--sombra);
+  display:flex; flex-direction:column; overflow:hidden; min-width:0;
+}
+.chat-topo{
+  background:var(--carbon); color:var(--white);
+  padding:13px 18px; display:flex; align-items:center; gap:12px; flex:0 0 auto;
+}
+.chat-topo .av{ width:38px; height:38px; border-radius:50%; background:#42454D; display:grid; place-items:center; flex:0 0 auto; }
+.chat-topo .av img{ width:22px; height:22px; object-fit:contain; }
+.chat-topo .quem{ flex:1; min-width:0; }
+.chat-topo .quem b{ display:block; font-size:14.5px; font-weight:600; letter-spacing:-.01em; }
+.chat-topo .quem span{ display:flex; align-items:center; gap:5px; font-family:"DM Mono",monospace; font-size:10px; color:#B9BCC3; margin-top:1px; }
+.chat-topo .quem span::before{ content:""; width:6px; height:6px; border-radius:50%; background:var(--citric); }
+.btn-painel{ display:none; }
+
+.msgs{
+  flex:1; overflow-y:auto; padding:26px 22px 10px;
+  background:var(--chat-bg); scroll-behavior:smooth;
+}
+.msgs::-webkit-scrollbar{ width:8px; }
+.msgs::-webkit-scrollbar-thumb{ background:#DCDCDC; border-radius:99px; border:2px solid var(--chat-bg); }
+
+.linha{ display:flex; gap:9px; align-items:flex-end; margin-bottom:9px; animation:entra .3s cubic-bezier(.2,.8,.3,1); }
+@keyframes entra{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
+.linha .av-bot{
+  width:26px; height:26px; border-radius:50%; background:var(--carbon);
+  display:grid; place-items:center; flex:0 0 auto; margin-bottom:1px;
+}
+.linha .av-bot img{ width:15px; height:15px; object-fit:contain; }
+.linha .av-bot.oculto{ visibility:hidden; }
+.linha.de-user{ justify-content:flex-end; }
+
+.bolha{
+  max-width:min(78%, 480px);
+  padding:11px 14px; border-radius:16px;
+  font-size:14.5px; line-height:1.52; letter-spacing:-.005em;
+  word-wrap:break-word;
+}
+.de-bot .bolha{ background:var(--white); border:1px solid var(--border); border-bottom-left-radius:5px; }
+.de-user .bolha{ background:var(--carbon); color:var(--white); border-bottom-right-radius:5px; }
+.bolha b{ font-weight:600; }
+.bolha .lista{ margin:7px 0 0; padding-left:2px; list-style:none; }
+.bolha .lista li{ position:relative; padding-left:16px; margin-bottom:4px; font-size:14px; }
+.bolha .lista li::before{ content:""; position:absolute; left:2px; top:8px; width:5px; height:5px; border-radius:50%; background:var(--carbon); }
+.bolha .obs{ display:block; margin-top:7px; font-family:"DM Mono",monospace; font-size:11px; color:var(--t3); line-height:1.45; }
+.de-user .bolha .obs{ color:#A9ACB3; }
+
+.marco{ display:flex; align-items:center; gap:10px; margin:16px 0 14px; }
+.marco::before, .marco::after{ content:""; flex:1; height:1px; background:var(--border); }
+.marco span{ font-family:"DM Mono",monospace; font-size:9.5px; text-transform:uppercase; letter-spacing:.14em; color:var(--t3); }
+
+/* digitando */
+.pontos{ display:flex; gap:4px; padding:14px 15px; background:var(--white); border:1px solid var(--border); border-radius:16px; border-bottom-left-radius:5px; }
+.pontos i{ width:6px; height:6px; border-radius:50%; background:#C4C4C4; animation:pula 1.3s infinite ease-in-out; }
+.pontos i:nth-child(2){ animation-delay:.16s; } .pontos i:nth-child(3){ animation-delay:.32s; }
+@keyframes pula{ 0%,60%,100%{ transform:translateY(0); opacity:.5; } 30%{ transform:translateY(-4px); opacity:1; } }
+
+/* anexo dentro da bolha */
+.anexo{ display:flex; align-items:center; gap:10px; min-width:210px; }
+.anexo .mini-prev{ width:42px; height:42px; border-radius:8px; object-fit:cover; background:#4A4D55; flex:0 0 auto; }
+.anexo .mini-prev.arq{ display:grid; place-items:center; }
+.anexo .mini-prev.arq svg{ width:19px; height:19px; stroke:var(--citric); }
+.anexo .info{ min-width:0; }
+.anexo .info b{ display:block; font-size:13.5px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:220px; }
+.anexo .info span{ font-family:"DM Mono",monospace; font-size:10.5px; color:#A9ACB3; }
+
+/* cartão de revisão */
+.revisao{ background:var(--white); border:1px solid var(--border); border-radius:14px; padding:4px 14px; max-width:min(88%, 520px); }
+.rev-item{ display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid #F0F0F0; }
+.rev-item:last-child{ border-bottom:none; }
+.rev-item .rot{ font-family:"DM Mono",monospace; font-size:9.5px; text-transform:uppercase; letter-spacing:.1em; color:var(--t3); display:block; margin-bottom:2px; }
+.rev-item .val{ font-size:13.5px; font-weight:500; overflow-wrap:anywhere; }
+.rev-item .corpo{ flex:1; min-width:0; }
+.rev-item button{
+  font-family:"DM Mono",monospace; font-size:9.5px; text-transform:uppercase; letter-spacing:.08em;
+  border:1px solid var(--border); background:var(--white); color:var(--t2);
+  padding:5px 9px; border-radius:7px; cursor:pointer; flex:0 0 auto; transition:.18s;
+}
+.rev-item button:hover{ background:var(--carbon); color:var(--citric); border-color:var(--carbon); }
+.rev-sub{ font-family:"DM Mono",monospace; font-size:9.5px; text-transform:uppercase; letter-spacing:.12em; color:var(--t3); padding:14px 0 2px; border-top:1px solid #F0F0F0; }
+.rev-item:first-child{ padding-top:12px; }
+
+/* cartão final */
+.final{ background:var(--carbon); color:var(--white); border-radius:14px; padding:22px; max-width:min(88%, 480px); text-align:center; }
+.final .ok{ width:46px; height:46px; border-radius:50%; background:var(--citric); display:grid; place-items:center; margin:0 auto 14px; }
+.final .ok svg{ width:24px; height:24px; stroke:var(--carbon); }
+.final h3{ font-size:19px; font-weight:700; letter-spacing:-.01em; margin-bottom:6px; }
+.final p{ font-size:14px; color:#C3C6CC; line-height:1.55; }
+.final .protocolo{
+  margin-top:16px; padding:11px; border-radius:10px; background:#42454D;
+  font-family:"DM Mono",monospace; font-size:13px; color:var(--citric); letter-spacing:.08em;
+}
+.final .protocolo small{ display:block; font-size:9px; color:#9DA0A7; letter-spacing:.14em; margin-bottom:3px; }
+
+/* ── Composer (área de resposta) ─────────────────── */
+.composer{ flex:0 0 auto; border-top:1px solid var(--border); background:var(--white); padding:14px 18px 16px; }
+.composer:empty{ display:none; }
+.dica{ font-family:"DM Mono",monospace; font-size:10.5px; color:var(--t3); margin-bottom:9px; line-height:1.45; }
+
+.campo-linha{ display:flex; gap:9px; align-items:center; }
+.campo{
+  flex:1; min-width:0; font-family:"DM Sans",sans-serif; font-size:15px; color:var(--t1);
+  padding:13px 15px; border:1px solid var(--border); border-radius:12px; background:var(--white);
+  outline:none; transition:border-color .18s, box-shadow .18s;
+}
+.campo::placeholder{ color:#BDBDBD; }
+.campo:focus{ border-color:var(--carbon); box-shadow:0 0 0 3px rgba(53,56,63,.07); }
+.campo.erro{ border-color:var(--erro); box-shadow:0 0 0 3px rgba(192,57,43,.08); }
+
+.enviar{
+  width:46px; height:46px; flex:0 0 auto; border:none; border-radius:12px;
+  background:var(--carbon); display:grid; place-items:center; cursor:pointer; transition:.18s;
+}
+.enviar svg{ width:19px; height:19px; stroke:var(--citric); }
+.enviar:disabled{ background:#E6E6E6; cursor:not-allowed; }
+.enviar:disabled svg{ stroke:#B5B5B5; }
+.enviar:not(:disabled):hover{ transform:translateY(-1px); }
+
+.chips{ display:flex; flex-wrap:wrap; gap:8px; }
+.chip{
+  font-family:"DM Sans",sans-serif; font-size:14px; font-weight:500;
+  padding:10px 16px; border-radius:99px; border:1px solid var(--border);
+  background:var(--white); color:var(--t1); cursor:pointer; transition:.18s;
+}
+.chip:hover{ background:var(--carbon); color:var(--citric); border-color:var(--carbon); transform:translateY(-1px); }
+.chip.principal{ background:var(--carbon); color:var(--citric); border-color:var(--carbon); }
+.chip.principal:hover{ background:#2A2D33; }
+.chip.leve{ background:var(--white); color:var(--t3); }
+.chip.leve:hover{ background:#F0F0F0; color:var(--t2); border-color:var(--border); }
+
+.solta{
+  display:flex; align-items:center; gap:13px; padding:16px;
+  border:1.5px dashed #D2D2D2; border-radius:13px; cursor:pointer;
+  background:#FCFCFC; transition:.18s; margin-bottom:9px;
+}
+.solta:hover, .solta.sobre{ border-color:var(--carbon); background:#F6F6F6; }
+.solta .ico{ width:40px; height:40px; border-radius:11px; background:var(--carbon); display:grid; place-items:center; flex:0 0 auto; }
+.solta .ico svg{ width:19px; height:19px; stroke:var(--citric); }
+.solta .txt b{ display:block; font-size:14px; font-weight:600; }
+.solta .txt span{ font-family:"DM Mono",monospace; font-size:10.5px; color:var(--t3); }
+.solta input{ display:none; }
+
+.aviso{
+  display:flex; gap:8px; align-items:flex-start;
+  font-size:12.5px; line-height:1.45; color:var(--erro);
+  background:var(--erro-bg); border-radius:9px; padding:9px 11px; margin-bottom:9px;
+}
+.aviso svg{ width:14px; height:14px; flex:0 0 auto; margin-top:2px; stroke:var(--erro); }
+
+/* ── Modal de dados (JSON) ───────────────────────── */
+.modal{ position:fixed; inset:0; background:rgba(17,17,17,.5); display:none; place-items:center; padding:24px; z-index:50; backdrop-filter:blur(3px); }
+.modal.aberto{ display:grid; }
+.modal-cx{ background:var(--white); border-radius:var(--raio); width:min(660px,100%); max-height:82vh; display:flex; flex-direction:column; overflow:hidden; }
+.modal-topo{ padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+.modal-topo b{ font-size:15px; }
+.modal-topo p{ font-family:"DM Mono",monospace; font-size:10px; color:var(--t3); text-transform:uppercase; letter-spacing:.1em; margin-top:2px; }
+.modal-topo button{ border:none; background:none; font-size:22px; line-height:1; color:var(--t3); cursor:pointer; }
+.modal-corpo{ overflow:auto; padding:18px 20px; }
+.modal-corpo pre{ font-family:"DM Mono",monospace; font-size:12px; line-height:1.65; color:var(--t2); white-space:pre-wrap; word-break:break-word; }
+.modal-rodape{ padding:12px 20px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end; }
+
+/* ── Responsivo ──────────────────────────────────── */
+@media (max-width:900px){
+  body{ overflow:hidden; }
+  .wrap{ grid-template-columns:1fr; padding:0; gap:0; height:100dvh; }
+  .chat{ border-radius:0; border:none; box-shadow:none; height:100dvh; }
+  .chat-topo{ padding-top:max(13px, env(safe-area-inset-top)); }
+  .painel{
+    position:fixed; inset:0; z-index:40; border-radius:0; border:none;
+    transform:translateX(-100%); transition:transform .3s cubic-bezier(.4,0,.2,1);
+  }
+  .painel.aberto{ transform:none; }
+  .btn-painel{
+    display:grid; place-items:center; width:36px; height:36px; flex:0 0 auto;
+    border:1px solid #4C4F57; border-radius:10px; background:transparent; cursor:pointer;
+  }
+  .btn-painel svg{ width:17px; height:17px; stroke:var(--white); }
+  .painel-rodape{ padding-bottom:max(12px, env(safe-area-inset-bottom)); }
+  .composer{ padding-bottom:max(16px, env(safe-area-inset-bottom)); }
+  .bolha{ max-width:85%; }
+  .msgs{ padding:20px 16px 8px; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ═══ PAINEL DE ACOMPANHAMENTO ═══ -->
+  <aside class="painel" id="painel">
+    <div class="painel-topo">
+      <div class="painel-marca">
+        <div class="selo"><img src="img/logo-tata-branco.png" alt=""></div>
+        <div>
+          <h1>Processo de Admissão</h1>
+          <p>Tatá Sushi &middot; RH</p>
+        </div>
+      </div>
+      <div class="progresso-rot">
+        <span>Progresso</span>
+        <span id="pct">0%</span>
+      </div>
+      <div class="barra"><i id="barra"></i></div>
+    </div>
+
+    <div class="painel-corpo">
+      <p class="painel-titulo">Etapas</p>
+      <div id="grupos"></div>
+      <div class="docs">
+        <p class="painel-titulo">Documentos</p>
+        <div id="lista-docs"></div>
+      </div>
+    </div>
+
+    <div class="painel-rodape">
+      <button class="mini" id="btn-json">Ver dados</button>
+      <button class="mini" id="btn-reiniciar">Reiniciar</button>
+    </div>
+  </aside>
+
+  <!-- ═══ CHAT ═══ -->
+  <main class="chat">
+    <header class="chat-topo">
+      <button class="btn-painel" id="btn-painel" aria-label="Acompanhamento">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div class="av"><img src="img/logo-tata-branco.png" alt=""></div>
+      <div class="quem">
+        <b>Tatá &middot; Admissão</b>
+        <span id="status-bot">on-line</span>
+      </div>
+    </header>
+
+    <div class="msgs" id="msgs"></div>
+    <div class="composer" id="composer"></div>
+  </main>
+</div>
+
+<!-- ═══ MODAL: dados coletados ═══ -->
+<div class="modal" id="modal">
+  <div class="modal-cx">
+    <div class="modal-topo">
+      <div>
+        <b>Dados coletados</b>
+        <p>Payload que o app receberá</p>
+      </div>
+      <button id="fechar-modal" aria-label="Fechar">&times;</button>
+    </div>
+    <div class="modal-corpo"><pre id="json"></pre></div>
+    <div class="modal-rodape">
+      <button class="mini" style="flex:0 0 auto" id="copiar-json">Copiar JSON</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════
+   ROTEIRO DA ADMISSÃO
+   ────────────────────────────────────────────────────────────────────
+   Para editar a conversa, mexa só neste array. Cada objeto é um passo.
+
+   tipos disponíveis:
+     'fala'    → o bot só fala e segue sozinho.  { falas:[...] }
+     'texto'   → pergunta aberta.  { campo, rotulo, pergunta, dica, placeholder,
+                                     mascara:'cpf|telefone|data|cep|dinheiro',
+                                     teclado, validar:(v)=>true|'mensagem de erro' }
+     'opcoes'  → botões de resposta rápida. { campo, rotulo, pergunta, opcoes:[{v,label}] }
+     'upload'  → envio de arquivo. { doc:'id', rotulo, pergunta, dica, aceita,
+                                     multiplo:true, opcional:true }
+     'revisao' → mostra tudo que foi coletado, com botão de editar.
+     'fim'     → cartão de conclusão + protocolo.
+
+   campos comuns a todos:
+     id       → identificador do passo (usado para voltar/editar)
+     grupo    → nome da etapa exibida no painel lateral
+     condicao → (dados) => boolean; se retornar false o passo é pulado
+   ════════════════════════════════════════════════════════════════════ */
+
+const ROTEIRO = [
+  /* ── Abertura ───────────────────────────────────── */
+  { id:'abertura', tipo:'fala', grupo:'Boas-vindas', falas:[
+      'Oi! Eu sou o assistente de admissão do <b>Tatá Sushi</b> 🍣',
+      'Que bom ter você com a gente! Vou te guiar na sua admissão por aqui mesmo — é rápido, leva uns <b>10 minutinhos</b>.',
+      'A gente vai fazer em 3 partes:<ul class="lista"><li>Seus dados pessoais e endereço</li><li>Dados bancários e uniforme</li><li>Envio dos documentos (pode ser foto pelo celular)</li></ul><span class="obs">Pode parar e voltar depois — nada se perde.</span>'
+    ]},
+  { id:'comecar', tipo:'opcoes', grupo:'Boas-vindas', pergunta:'Bora começar?',
+    campo:'_inicio', rotulo:'Início', ocultarRevisao:true,
+    opcoes:[{v:'sim', label:'Vamos lá 🚀', principal:true}, {v:'duvida', label:'Tenho uma dúvida'}] },
+  { id:'duvida', tipo:'fala', grupo:'Boas-vindas',
+    condicao:d => d._inicio === 'duvida',
+    falas:[
+      'Claro! Qualquer dúvida sobre contrato, salário ou horário, fale direto com o RH pelo <b>(11) 90000-0000</b>.',
+      'Mas os documentos você já pode ir mandando por aqui — assim adiantamos tudo. Vamos nessa!'
+    ]},
+
+  /* ── Dados pessoais ─────────────────────────────── */
+  { id:'nome', tipo:'texto', grupo:'Dados pessoais', campo:'nome', rotulo:'Nome completo',
+    pergunta:'Primeiro, me diga seu <b>nome completo</b>, igualzinho está no documento.',
+    placeholder:'Ex.: Maria Aparecida da Silva',
+    validar:v => v.trim().split(/\s+/).length >= 2 || 'Preciso do nome e do sobrenome, tudo bem?' },
+
+  { id:'nome_social', tipo:'opcoes', grupo:'Dados pessoais', campo:'usa_nome_social', rotulo:'Usa nome social', ocultarRevisao:true,
+    pergunta:'Você usa <b>nome social</b> e prefere ser chamado(a) por ele no dia a dia?',
+    opcoes:[{v:'nao', label:'Não'}, {v:'sim', label:'Sim, uso'}] },
+  { id:'qual_nome_social', tipo:'texto', grupo:'Dados pessoais', campo:'nome_social', rotulo:'Nome social',
+    condicao:d => d.usa_nome_social === 'sim',
+    pergunta:'Perfeito. Como você quer ser chamado(a)?', placeholder:'Nome social',
+    validar:v => v.trim().length >= 2 || 'Escreva pelo menos 2 letras.' },
+
+  { id:'cpf', tipo:'texto', grupo:'Dados pessoais', campo:'cpf', rotulo:'CPF',
+    pergunta:'Agora o seu <b>CPF</b>.', dica:'Usamos só para o registro em carteira.',
+    placeholder:'000.000.000-00', mascara:'cpf', teclado:'numeric',
+    validar:v => validarCPF(v) || 'Esse CPF não confere. Pode conferir e mandar de novo?' },
+
+  { id:'nascimento', tipo:'texto', grupo:'Dados pessoais', campo:'nascimento', rotulo:'Data de nascimento',
+    pergunta:'Qual a sua <b>data de nascimento</b>?', placeholder:'DD/MM/AAAA',
+    mascara:'data', teclado:'numeric', validar:validarData },
+
+  { id:'telefone', tipo:'texto', grupo:'Dados pessoais', campo:'telefone', rotulo:'WhatsApp',
+    pergunta:'Me passa seu <b>WhatsApp</b> com DDD? É por ele que a liderança vai te avisar da escala.',
+    placeholder:'(11) 90000-0000', mascara:'telefone', teclado:'tel',
+    validar:v => so(v).length >= 10 || 'Faltou algum número. Confere o DDD?' },
+
+  { id:'email', tipo:'texto', grupo:'Dados pessoais', campo:'email', rotulo:'E-mail',
+    pergunta:'E o seu <b>e-mail</b>? Vamos mandar o contrato para assinatura nele.',
+    placeholder:'voce@email.com', teclado:'email',
+    validar:v => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v.trim()) || 'Esse e-mail parece incompleto.' },
+
+  { id:'estado_civil', tipo:'opcoes', grupo:'Dados pessoais', campo:'estado_civil', rotulo:'Estado civil',
+    pergunta:'Qual o seu <b>estado civil</b>?',
+    opcoes:[{v:'solteiro',label:'Solteiro(a)'},{v:'casado',label:'Casado(a)'},
+            {v:'uniao',label:'União estável'},{v:'divorciado',label:'Divorciado(a)'},{v:'viuvo',label:'Viúvo(a)'}] },
+
+  { id:'dependentes', tipo:'opcoes', grupo:'Dados pessoais', campo:'tem_dependentes', rotulo:'Tem dependentes',
+    pergunta:'Você tem <b>filhos ou dependentes</b> menores de 14 anos?',
+    dica:'Isso conta para salário-família e imposto de renda.',
+    opcoes:[{v:'nao',label:'Não tenho'},{v:'sim',label:'Sim, tenho'}] },
+  { id:'qtd_dependentes', tipo:'opcoes', grupo:'Dados pessoais', campo:'qtd_dependentes', rotulo:'Qtd. de dependentes',
+    condicao:d => d.tem_dependentes === 'sim',
+    pergunta:'Quantos?', opcoes:[{v:'1',label:'1'},{v:'2',label:'2'},{v:'3',label:'3'},{v:'4+',label:'4 ou mais'}] },
+
+  /* ── Endereço ───────────────────────────────────── */
+  { id:'cep', tipo:'texto', grupo:'Endereço', campo:'cep', rotulo:'CEP',
+    pergunta:'Vamos ao endereço. Qual o seu <b>CEP</b>?',
+    placeholder:'00000-000', mascara:'cep', teclado:'numeric',
+    validar:v => so(v).length === 8 || 'O CEP tem 8 números.' },
+
+  { id:'endereco', tipo:'texto', grupo:'Endereço', campo:'endereco', rotulo:'Endereço',
+    pergunta:'Agora <b>rua, número e complemento</b>.',
+    placeholder:'Ex.: Rua das Flores, 123, apto 42',
+    validar:v => v.trim().length >= 6 || 'Preciso da rua e do número.' },
+
+  { id:'bairro_cidade', tipo:'texto', grupo:'Endereço', campo:'bairro_cidade', rotulo:'Bairro e cidade',
+    pergunta:'E o <b>bairro e a cidade</b>?', placeholder:'Ex.: Pinheiros, São Paulo',
+    validar:v => v.trim().length >= 4 || 'Escreva o bairro e a cidade.' },
+
+  { id:'transporte', tipo:'opcoes', grupo:'Endereço', campo:'vale_transporte', rotulo:'Vale-transporte',
+    pergunta:'Você vai precisar de <b>vale-transporte</b>?',
+    opcoes:[{v:'sim',label:'Sim, vou precisar'},{v:'nao',label:'Não, vou por conta própria'}] },
+  { id:'linhas', tipo:'texto', grupo:'Endereço', campo:'linhas', rotulo:'Linhas / condução',
+    condicao:d => d.vale_transporte === 'sim',
+    pergunta:'Quais <b>conduções</b> você usa até a unidade? Pode escrever do jeito que souber.',
+    placeholder:'Ex.: Metrô Linha 4 + ônibus 809U',
+    validar:v => v.trim().length >= 3 || 'Me conta pelo menos uma linha.' },
+
+  /* ── Trabalho e uniforme ────────────────────────── */
+  { id:'escolaridade', tipo:'opcoes', grupo:'Trabalho e uniforme', campo:'escolaridade', rotulo:'Escolaridade',
+    pergunta:'Qual a sua <b>escolaridade</b>?',
+    opcoes:[{v:'fund_inc',label:'Fundamental incompleto'},{v:'fund',label:'Fundamental completo'},
+            {v:'medio_inc',label:'Médio incompleto'},{v:'medio',label:'Médio completo'},
+            {v:'sup_inc',label:'Superior incompleto'},{v:'sup',label:'Superior completo'}] },
+
+  { id:'uniforme', tipo:'opcoes', grupo:'Trabalho e uniforme', campo:'uniforme', rotulo:'Tamanho do uniforme',
+    pergunta:'Qual o seu <b>tamanho de uniforme</b>?',
+    dica:'A camiseta é de modelagem tradicional.',
+    opcoes:[{v:'PP',label:'PP'},{v:'P',label:'P'},{v:'M',label:'M'},{v:'G',label:'G'},{v:'GG',label:'GG'},{v:'XG',label:'XG'}] },
+
+  { id:'calcado', tipo:'texto', grupo:'Trabalho e uniforme', campo:'calcado', rotulo:'Nº do calçado',
+    pergunta:'E o número do seu <b>calçado</b>? A gente fornece o sapato antiderrapante.',
+    placeholder:'Ex.: 38', teclado:'numeric',
+    validar:v => { const n = +so(v); return (n >= 30 && n <= 48) || 'Coloque um número entre 30 e 48.'; } },
+
+  { id:'restricao', tipo:'opcoes', grupo:'Trabalho e uniforme', campo:'restricao_saude', rotulo:'Restrição de saúde',
+    pergunta:'Você tem alguma <b>restrição de saúde ou alergia</b> que a gente precise saber?',
+    dica:'Fica só com o RH e com a segurança do trabalho.',
+    opcoes:[{v:'nao',label:'Não tenho'},{v:'sim',label:'Sim, tenho'}] },
+  { id:'qual_restricao', tipo:'texto', grupo:'Trabalho e uniforme', campo:'restricao_detalhe', rotulo:'Detalhe da restrição',
+    condicao:d => d.restricao_saude === 'sim',
+    pergunta:'Pode me contar rapidinho qual é?', placeholder:'Ex.: alergia a frutos do mar',
+    validar:v => v.trim().length >= 3 || 'Escreva um pouquinho mais.' },
+
+  /* ── Dados bancários ────────────────────────────── */
+  { id:'banco_info', tipo:'fala', grupo:'Dados bancários', falas:[
+      'Agora os <b>dados bancários</b> para o pagamento do salário. 💳',
+      '<span class="obs">A conta precisa estar no seu nome. Não aceitamos conta de terceiros.</span>'
+    ]},
+  { id:'banco', tipo:'texto', grupo:'Dados bancários', campo:'banco', rotulo:'Banco',
+    pergunta:'Qual o seu <b>banco</b>?', placeholder:'Ex.: Nubank, Itaú, Caixa…',
+    validar:v => v.trim().length >= 2 || 'Escreva o nome do banco.' },
+  { id:'tipo_conta', tipo:'opcoes', grupo:'Dados bancários', campo:'tipo_conta', rotulo:'Tipo de conta',
+    pergunta:'É conta <b>corrente</b>, <b>poupança</b> ou <b>pagamento/digital</b>?',
+    opcoes:[{v:'corrente',label:'Corrente'},{v:'poupanca',label:'Poupança'},{v:'pagamento',label:'Pagamento / digital'}] },
+  { id:'agencia', tipo:'texto', grupo:'Dados bancários', campo:'agencia', rotulo:'Agência',
+    pergunta:'Número da <b>agência</b> (sem o dígito, se tiver).', placeholder:'Ex.: 0001', teclado:'numeric',
+    validar:v => so(v).length >= 3 || 'A agência tem pelo menos 3 números.' },
+  { id:'conta', tipo:'texto', grupo:'Dados bancários', campo:'conta', rotulo:'Conta com dígito',
+    pergunta:'E o número da <b>conta com o dígito</b>.', placeholder:'Ex.: 12345678-9',
+    validar:v => so(v).length >= 4 || 'Confere o número da conta, por favor.' },
+  { id:'pix', tipo:'texto', grupo:'Dados bancários', campo:'pix', rotulo:'Chave PIX',
+    pergunta:'Se tiver uma <b>chave PIX</b> no seu nome, me manda também.',
+    dica:'Ajuda em adiantamentos e reembolsos. Pode pular se preferir.',
+    opcional:true, placeholder:'CPF, telefone, e-mail ou aleatória' },
+
+  /* ── Documentos ─────────────────────────────────── */
+  { id:'docs_info', tipo:'fala', grupo:'Documentos', falas:[
+      'Estamos quase lá! Falta só a parte dos <b>documentos</b>. 📎',
+      'Pode fotografar com o celular mesmo — só precisa dar para <b>ler tudo</b>, sem corte e sem reflexo.<span class="obs">Aceito JPG, PNG ou PDF, até 10 MB por arquivo.</span>'
+    ]},
+
+  { id:'doc_identidade', tipo:'upload', grupo:'Documentos', doc:'identidade', rotulo:'RG ou CNH',
+    pergunta:'Manda a foto do seu <b>RG (frente e verso)</b> ou da <b>CNH aberta</b>.',
+    dica:'Pode mandar mais de um arquivo de uma vez.', multiplo:true },
+
+  { id:'doc_cpf', tipo:'upload', grupo:'Documentos', doc:'cpf_doc', rotulo:'CPF',
+    condicao:d => true,
+    pergunta:'Agora o <b>CPF</b>. Se o número já aparece no RG/CNH que você mandou, é só pular.',
+    opcional:true },
+
+  { id:'doc_residencia', tipo:'upload', grupo:'Documentos', doc:'residencia', rotulo:'Comprovante de residência',
+    pergunta:'<b>Comprovante de residência</b> dos últimos 3 meses (conta de luz, água, internet…).',
+    dica:'Se não estiver no seu nome, mande junto uma declaração simples de quem mora com você.' },
+
+  { id:'doc_ctps', tipo:'upload', grupo:'Documentos', doc:'ctps', rotulo:'Carteira de Trabalho digital',
+    pergunta:'O PDF da <b>Carteira de Trabalho Digital</b>.',
+    dica:'Baixe no app "Carteira de Trabalho Digital" → Contratos → Compartilhar.' },
+
+  { id:'doc_foto', tipo:'upload', grupo:'Documentos', doc:'foto', rotulo:'Foto 3x4 ou selfie',
+    pergunta:'Uma <b>foto 3x4</b> ou uma selfie de rosto com fundo claro — é para o seu crachá.' },
+
+  { id:'doc_escolaridade', tipo:'upload', grupo:'Documentos', doc:'escolaridade_doc', rotulo:'Comprovante de escolaridade',
+    pergunta:'Se tiver em mãos, o <b>comprovante de escolaridade</b> (histórico ou certificado).',
+    opcional:true },
+
+  { id:'doc_dependentes', tipo:'upload', grupo:'Documentos', doc:'dependentes_doc', rotulo:'Certidão dos dependentes',
+    condicao:d => d.tem_dependentes === 'sim',
+    pergunta:'Como você tem dependentes, preciso da <b>certidão de nascimento e do CPF</b> de cada um.',
+    dica:'Também vale a caderneta de vacinação, se for menor de 7 anos.', multiplo:true },
+
+  { id:'doc_banco', tipo:'upload', grupo:'Documentos', doc:'banco_doc', rotulo:'Comprovante bancário',
+    pergunta:'Por último, um <b>print ou comprovante da conta</b> mostrando agência, conta e seu nome.',
+    opcional:true },
+
+  { id:'aso_info', tipo:'fala', grupo:'Documentos', falas:[
+      'O <b>exame admissional (ASO)</b> é agendado pelo RH — você não precisa se preocupar em marcar.',
+      'Assim que fizer o exame, é só voltar aqui e anexar o resultado.'
+    ]},
+  { id:'doc_aso', tipo:'upload', grupo:'Documentos', doc:'aso', rotulo:'ASO — exame admissional',
+    pergunta:'Já fez o exame? Se sim, anexa o <b>ASO</b> aqui.',
+    dica:'Se ainda não fez, pode pular — a gente te avisa quando estiver agendado.',
+    opcional:true, textoPular:'Ainda não fiz' },
+
+  /* ── Fechamento ─────────────────────────────────── */
+  { id:'revisao', tipo:'revisao', grupo:'Conferência' },
+  { id:'termo', tipo:'opcoes', grupo:'Conferência', campo:'aceite', rotulo:'Aceite',
+    pergunta:'Para finalizar: você confirma que as informações são <b>verdadeiras</b> e autoriza o Tatá Sushi a usá-las para o seu registro trabalhista, conforme a <b>LGPD</b>?',
+    dica:'Seus documentos ficam guardados de forma segura e só o RH tem acesso.',
+    opcoes:[{v:'sim',label:'Li e concordo ✓', principal:true},{v:'depois',label:'Quero falar com o RH antes'}] },
+  { id:'fim', tipo:'fim', grupo:'Conferência' }
+];
+
+/* ════════════════════════════════════════════════════
+   MOTOR DA CONVERSA
+   ════════════════════════════════════════════════════ */
+
+const $  = s => document.querySelector(s);
+const so = v => (v || '').replace(/\D/g, '');
+
+const elMsgs = $('#msgs'), elComp = $('#composer');
+
+let estado = { i:0, dados:{}, arquivos:{}, retorno:null, protocolo:null };
+
+/* ── Máscaras ─────────────────────────────────────── */
+const MASCARAS = {
+  cpf: v => so(v).slice(0,11)
+        .replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})$/, '$1-$2'),
+  data: v => so(v).slice(0,8)
+        .replace(/(\d{2})(\d)/, '$1/$2').replace(/(\d{2})(\d)/, '$1/$2'),
+  cep: v => so(v).slice(0,8).replace(/(\d{5})(\d)/, '$1-$2'),
+  telefone: v => {
+    const n = so(v).slice(0,11);
+    return n.length <= 10
+      ? n.replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{4})(\d)/, '$1-$2')
+      : n.replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2');
+  }
+};
+
+/* ── Validações ───────────────────────────────────── */
+function validarCPF(v){
+  const c = so(v);
+  if (c.length !== 11 || /^(\d)\1{10}$/.test(c)) return false;
+  let s = 0;
+  for (let i = 0; i < 9; i++) s += +c[i] * (10 - i);
+  let d1 = (s * 10) % 11; if (d1 === 10) d1 = 0;
+  if (d1 !== +c[9]) return false;
+  s = 0;
+  for (let i = 0; i < 10; i++) s += +c[i] * (11 - i);
+  let d2 = (s * 10) % 11; if (d2 === 10) d2 = 0;
+  return d2 === +c[10];
+}
+
+function validarData(v){
+  const n = so(v);
+  if (n.length !== 8) return 'A data precisa ter 8 números: DD/MM/AAAA.';
+  const dia = +n.slice(0,2), mes = +n.slice(2,4), ano = +n.slice(4);
+  const d = new Date(ano, mes - 1, dia);
+  if (d.getDate() !== dia || d.getMonth() !== mes - 1 || d.getFullYear() !== ano) return 'Essa data não existe. Confere para mim?';
+  const idade = (Date.now() - d.getTime()) / 31557600000;
+  if (idade < 14) return 'Pelas regras trabalhistas, a idade mínima é 14 anos (menor aprendiz).';
+  if (idade > 90) return 'Essa data parece bem antiga. Pode conferir o ano?';
+  return true;
+}
+
+/* ── Ícones ───────────────────────────────────────── */
+const ICO = {
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  arquivo:'<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',
+  clipe:'<svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.05 12.2 20.3a5.5 5.5 0 0 1-7.8-7.8l9.2-9.2a3.7 3.7 0 0 1 5.2 5.2l-9.2 9.2a1.8 1.8 0 0 1-2.6-2.6l8.5-8.5"/></svg>',
+  enviar:'<svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4z"/></svg>',
+  alerta:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16.5v.01"/></svg>'
+};
+
+/* ── Passos visíveis (respeitando condições) ──────── */
+const visiveis = () => ROTEIRO.filter(p => !p.condicao || p.condicao(estado.dados));
+const interativo = p => ['texto','opcoes','upload'].includes(p.tipo);
+
+/* ── Mensagens ────────────────────────────────────── */
+function bolhaBot(html, primeira = true){
+  const l = document.createElement('div');
+  l.className = 'linha de-bot';
+  l.innerHTML = `<div class="av-bot${primeira ? '' : ' oculto'}"><img src="img/logo-tata-branco.png" alt=""></div>
+                 <div class="bolha">${html}</div>`;
+  elMsgs.appendChild(l); rolar(); return l;
+}
+function bolhaUser(html){
+  const l = document.createElement('div');
+  l.className = 'linha de-user';
+  l.innerHTML = `<div class="bolha">${html}</div>`;
+  elMsgs.appendChild(l); rolar(); return l;
+}
+function marco(texto){
+  const d = document.createElement('div');
+  d.className = 'marco';
+  d.innerHTML = `<span>${texto}</span>`;
+  elMsgs.appendChild(d); rolar();
+}
+let travarRolagem = false;
+function rolar(){
+  if (travarRolagem) return;
+  requestAnimationFrame(() => { elMsgs.scrollTop = elMsgs.scrollHeight; });
+  setTimeout(() => { if (!travarRolagem) elMsgs.scrollTop = elMsgs.scrollHeight; }, 60);
+}
+/* quando o composer muda de altura, o fim da conversa some atrás dele */
+new ResizeObserver(rolar).observe(elComp);
+
+function digitando(){
+  const l = document.createElement('div');
+  l.className = 'linha de-bot';
+  l.innerHTML = `<div class="av-bot"><img src="img/logo-tata-branco.png" alt=""></div>
+                 <div class="pontos"><i></i><i></i><i></i></div>`;
+  elMsgs.appendChild(l); rolar();
+  $('#status-bot').textContent = 'digitando…';
+  return l;
+}
+
+const espera = ms => new Promise(r => setTimeout(r, ms));
+
+async function falarBot(html, primeira = true){
+  const p = digitando();
+  const texto = html.replace(/<[^>]+>/g, '');
+  await espera(Math.min(1300, Math.max(480, texto.length * 13)));
+  p.remove();
+  $('#status-bot').textContent = 'on-line';
+  bolhaBot(html, primeira);
+  await espera(140);
+}
+
+/* ── Ciclo principal ──────────────────────────────── */
+let grupoAtual = 'Boas-vindas'; /* a abertura não precisa de divisor */
+
+async function rodar(){
+  elComp.innerHTML = '';
+  const lista = visiveis();
+  if (estado.i >= lista.length) return;
+  const passo = lista[estado.i];
+
+  if (passo.grupo && passo.grupo !== grupoAtual && interativo(passo)){
+    grupoAtual = passo.grupo;
+    marco(passo.grupo);
+  }
+  pintarPainel(passo);
+
+  if (passo.tipo === 'fala'){
+    for (let k = 0; k < passo.falas.length; k++) await falarBot(passo.falas[k], k === 0);
+    avancar(); return;
+  }
+
+  if (passo.tipo === 'fim') return concluir();
+
+  await falarBot(montarPergunta(passo));
+
+  if (passo.tipo === 'texto')   return comporTexto(passo);
+  if (passo.tipo === 'opcoes')  return comporOpcoes(passo);
+  if (passo.tipo === 'upload')  return comporUpload(passo);
+  if (passo.tipo === 'revisao') return comporRevisao(passo);
+}
+
+function montarPergunta(p){
+  if (p.tipo === 'revisao') return 'Prontinho! Dá uma conferida em tudo antes de eu enviar para o RH — se algo estiver errado, é só tocar em <b>Editar</b>.';
+  let h = p.pergunta;
+  if (p.opcional && p.tipo === 'upload') h += '<span class="obs">Este é opcional — pode pular e mandar depois.</span>';
+  return h;
+}
+
+function avancar(){
+  if (estado.retorno !== null){
+    estado.i = estado.retorno;
+    estado.retorno = null;
+  } else {
+    estado.i++;
+  }
+  rodar();
+}
+
+/* ── Composer: pergunta aberta ────────────────────── */
+function comporTexto(p){
+  elComp.innerHTML = `
+    ${p.dica ? `<p class="dica">${p.dica}</p>` : ''}
+    <div class="campo-linha">
+      <input class="campo" id="entrada" type="text" autocomplete="off"
+             placeholder="${p.placeholder || 'Escreva aqui…'}"
+             ${p.teclado ? `inputmode="${p.teclado}"` : ''}>
+      <button class="enviar" id="btn-enviar" disabled aria-label="Enviar">${ICO.enviar}</button>
+    </div>
+    ${p.opcional ? '<div class="chips" style="margin-top:9px"><button class="chip leve" id="pular">Pular por enquanto</button></div>' : ''}`;
+
+  const inp = $('#entrada'), btn = $('#btn-enviar');
+  inp.focus();
+
+  inp.addEventListener('input', () => {
+    if (p.mascara) inp.value = MASCARAS[p.mascara](inp.value);
+    inp.classList.remove('erro');
+    btn.disabled = inp.value.trim().length === 0;
+  });
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter' && !btn.disabled) enviar(); });
+  btn.addEventListener('click', enviar);
+  const pular = $('#pular');
+  if (pular) pular.addEventListener('click', async () => {
+    bolhaUser('Prefiro pular por enquanto');
+    estado.dados[p.campo] = null;
+    elComp.innerHTML = '';           /* trava para não enviar duas vezes */
+    await espera(220);
+    await falarBot('Sem problema, seguimos.');
+    avancar();
+  });
+
+  async function enviar(){
+    const v = inp.value.trim();
+    const r = p.validar ? p.validar(v) : true;
+    if (r !== true){
+      inp.classList.add('erro');
+      bolhaUser(escapar(v));
+      elComp.innerHTML = '';
+      await falarBot(typeof r === 'string' ? r : 'Hmm, algo não bateu. Pode tentar de novo?');
+      return comporTexto(p);
+    }
+    bolhaUser(escapar(v));
+    estado.dados[p.campo] = v;
+    elComp.innerHTML = '';           /* trava para não enviar duas vezes */
+    await espera(200);
+    avancar();
+  }
+}
+
+/* ── Composer: opções ─────────────────────────────── */
+function comporOpcoes(p){
+  elComp.innerHTML = `
+    ${p.dica ? `<p class="dica">${p.dica}</p>` : ''}
+    <div class="chips">
+      ${p.opcoes.map((o, k) => `<button class="chip${o.principal ? ' principal' : ''}" data-k="${k}">${o.label}</button>`).join('')}
+    </div>`;
+
+  elComp.querySelectorAll('.chip').forEach(b => b.addEventListener('click', async () => {
+    const o = p.opcoes[+b.dataset.k];
+    bolhaUser(o.label);
+    estado.dados[p.campo] = o.v;
+    elComp.innerHTML = '';
+    await espera(230);
+
+    if (p.id === 'termo' && o.v === 'depois'){
+      await falarBot('Tudo bem! Vou avisar o RH e alguém te chama no WhatsApp ainda hoje. Seus dados ficam salvos aqui.');
+      elComp.innerHTML = `<div class="chips"><button class="chip principal" id="voltar-termo">Ok, entendi</button></div>`;
+      $('#voltar-termo').addEventListener('click', () => { estado.i--; rodar(); });
+      return;
+    }
+    avancar();
+  }));
+}
+
+/* ── Composer: upload ─────────────────────────────── */
+function comporUpload(p){
+  elComp.innerHTML = `
+    ${p.dica ? `<p class="dica">${p.dica}</p>` : ''}
+    <div id="erro-arq"></div>
+    <label class="solta" id="solta">
+      <div class="ico">${ICO.clipe}</div>
+      <div class="txt">
+        <b>Tirar foto ou escolher arquivo</b>
+        <span>JPG, PNG ou PDF &middot; até 10 MB${p.multiplo ? ' &middot; pode selecionar vários' : ''}</span>
+      </div>
+      <input type="file" id="arq" accept="image/*,application/pdf" ${p.multiplo ? 'multiple' : ''}>
+    </label>
+    ${p.opcional ? `<div class="chips"><button class="chip leve" id="pular">${p.textoPular || 'Pular por enquanto'}</button></div>` : ''}`;
+
+  const zona = $('#solta'), inp = $('#arq');
+
+  ['dragenter','dragover'].forEach(ev => zona.addEventListener(ev, e => { e.preventDefault(); zona.classList.add('sobre'); }));
+  ['dragleave','drop'].forEach(ev => zona.addEventListener(ev, e => { e.preventDefault(); zona.classList.remove('sobre'); }));
+  zona.addEventListener('drop', e => receber([...e.dataTransfer.files]));
+  inp.addEventListener('change', () => receber([...inp.files]));
+
+  const pular = $('#pular');
+  if (pular) pular.addEventListener('click', async () => {
+    bolhaUser(p.textoPular || 'Vou pular por enquanto');
+    estado.arquivos[p.doc] = { pulado:true, rotulo:p.rotulo, itens:[] };
+    elComp.innerHTML = '';
+    await espera(220);
+    await falarBot('Beleza! Deixei marcado como <b>pendente</b> — você consegue anexar depois pelo app.');
+    avancar();
+  });
+
+  async function receber(arqs){
+    if (!arqs.length) return;
+    const grandes = arqs.filter(a => a.size > 10 * 1024 * 1024);
+    if (grandes.length){
+      $('#erro-arq').innerHTML = `<div class="aviso">${ICO.alerta}<span>“${escapar(grandes[0].name)}” tem mais de 10 MB. Tente tirar a foto de novo ou reduzir o arquivo.</span></div>`;
+      inp.value = ''; return;
+    }
+    const itens = arqs.map(a => ({
+      nome:a.name, tamanho:a.size, tipo:a.type,
+      url:a.type.startsWith('image/') ? URL.createObjectURL(a) : null
+    }));
+    itens.forEach(it => bolhaUser(`
+      <div class="anexo">
+        ${it.url ? `<img class="mini-prev" src="${it.url}" alt="">`
+                 : `<div class="mini-prev arq">${ICO.arquivo}</div>`}
+        <div class="info"><b>${escapar(it.nome)}</b><span>${tamanho(it.tamanho)}</span></div>
+      </div>`));
+
+    estado.arquivos[p.doc] = { pulado:false, rotulo:p.rotulo, itens };
+    elComp.innerHTML = '';
+    await espera(300);
+    await falarBot(`Recebido! ✅ <b>${p.rotulo}</b> está legível e guardado.`);
+    avancar();
+  }
+}
+
+const tamanho = b => b < 1024*1024 ? `${Math.max(1, Math.round(b/1024))} KB` : `${(b/1048576).toFixed(1)} MB`;
+const escapar = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ── Composer: revisão ────────────────────────────── */
+function comporRevisao(){
+  const lista = visiveis();
+  const campos = lista.filter(p => p.campo && !p.ocultarRevisao && estado.dados[p.campo] != null);
+
+  let html = '<div class="linha de-bot"><div class="av-bot oculto"></div><div class="revisao">';
+  campos.forEach(p => {
+    html += `<div class="rev-item">
+      <div class="corpo"><span class="rot">${p.rotulo}</span><span class="val">${escapar(mostrar(p))}</span></div>
+      <button data-id="${p.id}">Editar</button>
+    </div>`;
+  });
+
+  const docs = lista.filter(p => p.tipo === 'upload');
+  if (docs.length) html += '<div class="rev-sub">Documentos</div>';
+  docs.forEach(p => {
+    const a = estado.arquivos[p.doc];
+    const txt = !a || a.pulado ? 'Pendente'
+      : a.itens.length > 1 ? `${a.itens.length} arquivos enviados` : a.itens[0].nome;
+    html += `<div class="rev-item">
+      <div class="corpo"><span class="rot">${p.rotulo}</span><span class="val">${escapar(txt)}</span></div>
+      <button data-id="${p.id}">${!a || a.pulado ? 'Enviar' : 'Trocar'}</button>
+    </div>`;
+  });
+  html += '</div></div>';
+
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  const cartao = div.firstElementChild;
+  elMsgs.appendChild(cartao);
+  /* o cartão é alto: mostramos o começo dele, não o fim */
+  travarRolagem = true;
+  requestAnimationFrame(() => cartao.scrollIntoView({ block:'start', behavior:'smooth' }));
+  setTimeout(() => { travarRolagem = false; }, 700);
+
+  elMsgs.querySelectorAll('.revisao button').forEach(b => b.addEventListener('click', async () => {
+    const idx = lista.findIndex(p => p.id === b.dataset.id);
+    if (idx < 0) return;
+    bolhaUser(`Quero corrigir: ${lista[idx].rotulo}`);
+    estado.retorno = estado.i;
+    estado.i = idx;
+    elComp.innerHTML = '';
+    await espera(230);
+    rodar();
+  }));
+
+  elComp.innerHTML = `<div class="chips"><button class="chip principal" id="ok-revisao">Está tudo certo ✓</button></div>`;
+  $('#ok-revisao').addEventListener('click', async () => {
+    bolhaUser('Está tudo certo ✓');
+    elComp.innerHTML = '';
+    await espera(230);
+    estado.i++;
+    rodar();
+  });
+}
+
+function mostrar(p){
+  const v = estado.dados[p.campo];
+  if (p.opcoes){
+    const o = p.opcoes.find(x => x.v === v);
+    return o ? o.label.replace(/\s*[^\w\sÀ-ſ().+/-].*$/, '').trim() : v;
+  }
+  return v;
+}
+
+/* ── Conclusão ────────────────────────────────────── */
+async function concluir(){
+  const lista = visiveis();
+  const pendentes = lista.filter(p => p.tipo === 'upload')
+    .filter(p => !estado.arquivos[p.doc] || estado.arquivos[p.doc].pulado)
+    .map(p => p.rotulo);
+
+  estado.protocolo = 'ADM-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000);
+  const primeiro = (estado.dados.nome_social || estado.dados.nome || '').split(' ')[0];
+
+  await falarBot(`Show, ${escapar(primeiro)}! Sua ficha de admissão foi enviada para o RH. 🎉`);
+
+  const cartao = document.createElement('div');
+  cartao.className = 'linha de-bot';
+  cartao.innerHTML = `<div class="av-bot oculto"></div>
+    <div class="final">
+      <div class="ok">${ICO.check}</div>
+      <h3>Admissão registrada</h3>
+      <p>O RH vai conferir seus documentos em até <b>2 dias úteis</b> e te chamar no WhatsApp com a data do exame admissional e do primeiro dia.</p>
+      <div class="protocolo"><small>PROTOCOLO</small>${estado.protocolo}</div>
+    </div>`;
+  elMsgs.appendChild(cartao); rolar();
+  await espera(500);
+
+  if (pendentes.length){
+    await falarBot(`Ficou pendente: <ul class="lista">${pendentes.map(d => `<li>${d}</li>`).join('')}</ul>
+      <span class="obs">Assim que tiver em mãos, é só voltar aqui e anexar.</span>`, false);
+  } else {
+    await falarBot('Todos os documentos foram entregues, nada pendente. 👏', false);
+  }
+  await falarBot('Seja muito bem-vindo(a) ao time Tatá! 🍣', false);
+
+  elComp.innerHTML = `<div class="chips">
+      <button class="chip" id="ver-dados">Ver meus dados</button>
+      <button class="chip leve" id="recomecar">Recomeçar simulação</button>
+    </div>`;
+  $('#ver-dados').addEventListener('click', abrirModal);
+  $('#recomecar').addEventListener('click', reiniciar);
+  pintarPainel(null, true);
+}
+
+/* ── Painel lateral ───────────────────────────────── */
+function pintarPainel(passoAtual, tudoFeito = false){
+  const lista = visiveis();
+  const grupos = [];
+  lista.forEach(p => {
+    if (!p.grupo || !interativo(p)) return;
+    let g = grupos.find(x => x.nome === p.grupo);
+    if (!g){ g = { nome:p.grupo, total:0, feitos:0 }; grupos.push(g); }
+    g.total++;
+    const idx = lista.indexOf(p);
+    if (idx < estado.i || tudoFeito) g.feitos++;
+  });
+
+  $('#grupos').innerHTML = grupos.map(g => {
+    const feito = g.feitos >= g.total;
+    const atual = !tudoFeito && passoAtual && passoAtual.grupo === g.nome;
+    return `<div class="grupo ${feito ? 'feito' : ''} ${atual && !feito ? 'atual' : ''}">
+      <div class="pino">${ICO.check}</div>
+      <div class="txt"><b>${g.nome}</b></div>
+      <span class="cont">${Math.min(g.feitos, g.total)}/${g.total}</span>
+    </div>`;
+  }).join('');
+
+  $('#lista-docs').innerHTML = lista.filter(p => p.tipo === 'upload').map(p => {
+    const a = estado.arquivos[p.doc];
+    const cls = a && !a.pulado ? 'recebido' : (a && a.pulado ? 'pulado' : '');
+    const tag = a && !a.pulado ? 'ok' : (a && a.pulado ? 'depois' : (p.opcional ? 'opcional' : 'pendente'));
+    return `<div class="doc ${cls}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+      <span class="nome">${p.rotulo}</span>
+      <span class="tag">${tag}</span>
+    </div>`;
+  }).join('');
+
+  const totalPassos = lista.filter(interativo).length;
+  const feitosTotal = tudoFeito ? totalPassos : lista.slice(0, estado.i).filter(interativo).length;
+  const pct = totalPassos ? Math.round(feitosTotal / totalPassos * 100) : 0;
+  $('#barra').style.width = pct + '%';
+  $('#pct').textContent = pct + '%';
+}
+
+/* ── Dados coletados (para plugar no app) ─────────── */
+function payload(){
+  const docs = {};
+  Object.entries(estado.arquivos).forEach(([k, a]) => {
+    docs[k] = {
+      rotulo:a.rotulo,
+      status:a.pulado ? 'pendente' : 'recebido',
+      arquivos:a.itens.map(i => ({ nome:i.nome, tipo:i.tipo, tamanho_bytes:i.tamanho }))
+    };
+  });
+  const dados = { ...estado.dados };
+  delete dados._inicio;
+  return {
+    protocolo:estado.protocolo,
+    status:estado.protocolo ? 'enviado' : 'em_andamento',
+    candidato:dados,
+    documentos:docs
+  };
+}
+
+function abrirModal(){
+  $('#json').textContent = JSON.stringify(payload(), null, 2);
+  $('#modal').classList.add('aberto');
+}
+
+/* ── Controles ────────────────────────────────────── */
+$('#btn-json').addEventListener('click', abrirModal);
+$('#fechar-modal').addEventListener('click', () => $('#modal').classList.remove('aberto'));
+$('#modal').addEventListener('click', e => { if (e.target.id === 'modal') $('#modal').classList.remove('aberto'); });
+$('#copiar-json').addEventListener('click', async e => {
+  try { await navigator.clipboard.writeText($('#json').textContent); e.target.textContent = 'Copiado ✓'; }
+  catch { e.target.textContent = 'Selecione e copie'; }
+  setTimeout(() => e.target.textContent = 'Copiar JSON', 1800);
+});
+$('#btn-reiniciar').addEventListener('click', reiniciar);
+$('#btn-painel').addEventListener('click', () => $('#painel').classList.toggle('aberto'));
+$('#painel').addEventListener('click', e => {
+  if (window.innerWidth <= 900 && e.target.closest('.mini')) $('#painel').classList.remove('aberto');
+});
+
+function reiniciar(){
+  Object.values(estado.arquivos).forEach(a => a.itens.forEach(i => i.url && URL.revokeObjectURL(i.url)));
+  estado = { i:0, dados:{}, arquivos:{}, retorno:null, protocolo:null };
+  grupoAtual = 'Boas-vindas';
+  elMsgs.innerHTML = ''; elComp.innerHTML = '';
+  $('#modal').classList.remove('aberto');
+  pintarPainel(null);
+  rodar();
+}
+
+/* ── Início ───────────────────────────────────────── */
+pintarPainel(null);
+rodar();
+</script>
+</body>
+</html>
