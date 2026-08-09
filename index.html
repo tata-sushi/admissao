@@ -333,6 +333,64 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
 }
 .aviso svg{ width:15px; height:15px; flex:0 0 auto; margin-top:2px; stroke:rgb(var(--danger)); }
 
+/* ══════════════════════════════════════════════════════════════
+   TELA DE ACESSO (gate) — aparece antes da conversa
+   ══════════════════════════════════════════════════════════════ */
+.gate{
+  position:fixed; inset:0; z-index:60;
+  max-width:540px; margin:0 auto;
+  background:rgb(var(--bg));
+  display:flex; flex-direction:column; align-items:center; justify-content:space-between;
+  text-align:center;
+  padding:26px 26px;
+  padding-top:calc(26px + env(safe-area-inset-top));
+  padding-bottom:calc(24px + env(safe-area-inset-bottom));
+  animation:gateIn .3s ease;
+}
+.gate.saindo{ animation:gateOut .3s ease forwards; }
+@keyframes gateIn{ from{ opacity:0; } }
+@keyframes gateOut{ to{ opacity:0; } }
+
+.gate-marca{ display:flex; align-items:center; gap:8px; padding-top:8px; }
+.gate-marca img{ height:30px; width:auto; }
+.gate-marca .nome{ font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600; letter-spacing:-.01em; }
+.gate-marca .nome span{ color:rgb(var(--accent)); }
+
+.gate .cadeado{
+  width:64px; height:64px; border-radius:20px; margin:0 auto 22px;
+  background:var(--accent-soft); display:grid; place-items:center;
+}
+.gate .cadeado svg{ width:28px; height:28px; stroke:rgb(var(--accent)); }
+.gate .cadeado.alerta{ background:rgb(var(--danger) / .12); }
+.gate .cadeado.alerta svg{ stroke:rgb(var(--danger)); }
+
+.gate h1{ font-family:'DM Sans',sans-serif; font-size:22px; font-weight:700; letter-spacing:-.02em; margin-bottom:9px; }
+.gate .gate-sub{ font-size:15px; line-height:1.55; color:rgb(var(--muted)); max-width:300px; margin:0 auto; }
+.gate #gate-form .gate-sub{ margin-bottom:28px; }
+
+.pin{ display:flex; justify-content:center; gap:11px; margin-bottom:14px; }
+.pin input{
+  width:54px; height:62px; text-align:center;
+  font-family:'DM Sans',sans-serif; font-size:26px; font-weight:600; color:rgb(var(--text));
+  border:1.5px solid var(--line); border-radius:16px; background:rgb(var(--surface));
+  outline:none; transition:border-color .15s, box-shadow .15s;
+}
+.pin input:focus{ border-color:rgb(var(--accent)); box-shadow:0 0 0 3px rgb(var(--accent) / .15); }
+.pin.erro input{ border-color:rgb(var(--danger)); }
+@keyframes tremor{ 0%,100%{ transform:translateX(0); } 20%,60%{ transform:translateX(-6px); } 40%,80%{ transform:translateX(6px); } }
+.pin.tremer{ animation:tremor .4s; }
+
+.gate-msg{ min-height:20px; font-size:13.5px; font-weight:500; color:rgb(var(--danger)); }
+
+.gate-rodape{
+  padding-top:24px;
+  font-family:'DM Mono',monospace; font-size:11px; line-height:1.7; color:rgb(var(--muted-2));
+}
+.gate-demo{
+  display:inline-block; margin-top:9px; padding:4px 11px; border-radius:var(--raio-pill);
+  background:var(--accent-soft); color:rgb(var(--accent-dim)); letter-spacing:.02em;
+}
+
 /* ── Modal dos dados ──────────────────────────────────── */
 .modal{
   position:fixed; inset:0; z-index:50; display:none; place-items:center; padding:20px;
@@ -356,7 +414,7 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
 .modal-rodape{ padding:14px 20px; border-top:1px solid var(--line); display:flex; justify-content:flex-end; }
 
 @media (prefers-reduced-motion:reduce){
-  .linha,.pontos i{ animation:none; }
+  .linha,.pontos i,.gate,.gate.saindo,.pin.tremer{ animation:none; }
   .msgs{ scroll-behavior:auto; }
   .tap:active,.chip:active,.solta:active,.enviar:active{ transform:none; }
 }
@@ -381,6 +439,43 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
 
   <div class="msgs" id="msgs"></div>
   <div class="composer" id="composer"></div>
+</div>
+
+<!-- ═══ TELA DE ACESSO ═══ -->
+<div class="gate" id="gate">
+  <div class="gate-marca">
+    <img src="img/logo-mark-light.png" alt="Tatá" width="114" height="128">
+    <div class="nome">TATÁ<span> ADMISSÃO</span></div>
+  </div>
+
+  <div id="gate-form">
+    <div class="cadeado">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>
+    </div>
+    <h1>Confirme que é você</h1>
+    <p class="gate-sub">Digite os <b>4 últimos dígitos do seu CPF</b> para começar sua admissão.</p>
+    <div class="pin" id="gate-pin">
+      <input inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" aria-label="dígito 1">
+      <input inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" aria-label="dígito 2">
+      <input inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" aria-label="dígito 3">
+      <input inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" aria-label="dígito 4">
+    </div>
+    <div class="gate-msg" id="gate-msg"></div>
+  </div>
+
+  <div id="gate-bloqueado" style="display:none">
+    <div class="cadeado alerta">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>
+    </div>
+    <h1>Acesso bloqueado</h1>
+    <p class="gate-sub">Muitas tentativas seguidas. Fale com o RH do Tatá pelo <b>(11) 90000-0000</b> para liberar o acesso de novo.</p>
+    <button class="chip leve" id="gate-recomecar" style="margin-top:14px">Recomeçar simulação</button>
+  </div>
+
+  <div class="gate-rodape">
+    Você recebeu este link do RH do Tatá Sushi.
+    <span class="gate-demo">Simulação — digite 1234</span>
+  </div>
 </div>
 
 <div class="modal" id="modal">
@@ -1077,12 +1172,82 @@ function reiniciar(){
   elMsgs.innerHTML = ''; elComp.innerHTML = '';
   $('#modal').classList.remove('aberto');
   atualizarProgresso(null);
-  rodar();
+  mostrarGate();
 }
+
+/* ── Tela de acesso (gate) ────────────────────────────
+   SIMULAÇÃO: no ar, os 4 dígitos e o nome vêm do backend
+   (Edge Function admissao-acesso). Aqui o final é fixo pra demonstrar. */
+const DEMO_CPF4 = '1234';
+const MAX_TENTATIVAS = 5;
+let tentativasGate = 0;
+
+const gateEl     = $('#gate');
+const gateInputs = [...gateEl.querySelectorAll('#gate-pin input')];
+const gatePin    = $('#gate-pin');
+const gateMsg    = $('#gate-msg');
+
+function comecarFluxo(){ atualizarProgresso(null); rodar(); }
+
+function mostrarGate(){
+  tentativasGate = 0;
+  gateInputs.forEach(i => i.value = '');
+  gateMsg.textContent = '';
+  gatePin.classList.remove('erro');
+  $('#gate-form').style.display = '';
+  $('#gate-bloqueado').style.display = 'none';
+  gateEl.classList.remove('saindo');
+  gateEl.style.display = 'flex';
+  setTimeout(() => gateInputs[0].focus(), 60);
+}
+
+function validarGate(){
+  const v = gateInputs.map(i => i.value).join('');
+  if (v.length < 4) return;
+  if (v === DEMO_CPF4){
+    gateMsg.textContent = '';
+    gateEl.classList.add('saindo');
+    setTimeout(() => { gateEl.style.display = 'none'; comecarFluxo(); }, 320);
+    return;
+  }
+  tentativasGate++;
+  gatePin.classList.add('erro','tremer');
+  setTimeout(() => gatePin.classList.remove('tremer'), 420);
+  gateInputs.forEach(i => i.value = '');
+  gateInputs[0].focus();
+  if (tentativasGate >= MAX_TENTATIVAS){
+    $('#gate-form').style.display = 'none';
+    $('#gate-bloqueado').style.display = '';
+  } else {
+    const restam = MAX_TENTATIVAS - tentativasGate;
+    gateMsg.textContent = `CPF não confere. ${restam} ${restam === 1 ? 'tentativa restante' : 'tentativas restantes'}.`;
+  }
+}
+
+gateInputs.forEach((inp, idx) => {
+  inp.addEventListener('input', () => {
+    inp.value = inp.value.replace(/\D/g, '').slice(0,1);
+    gatePin.classList.remove('erro');
+    if (inp.value && idx < gateInputs.length - 1) gateInputs[idx+1].focus();
+    if (gateInputs.every(i => i.value)) validarGate();
+  });
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Backspace' && !inp.value && idx > 0) gateInputs[idx-1].focus();
+  });
+  inp.addEventListener('paste', e => {
+    e.preventDefault();
+    const d = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0,4);
+    d.split('').forEach((ch, k) => { if (gateInputs[k]) gateInputs[k].value = ch; });
+    if (d.length === 4) validarGate();
+    else gateInputs[Math.min(d.length, gateInputs.length - 1)].focus();
+  });
+});
+
+$('#gate-recomecar').addEventListener('click', mostrarGate);
 
 /* ── Início ───────────────────────────────────────── */
 atualizarProgresso(null);
-rodar();
+mostrarGate();
 </script>
 </body>
 </html>
