@@ -100,15 +100,6 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
 }
 .ico-btn:hover{ background:var(--fill); color:rgb(var(--text)); }
 .ico-btn svg{ width:19px; height:19px; }
-/* controle de velocidade da voz (cabeçalho) */
-.vel-btn{
-  min-width:42px; height:32px; padding:0 11px; flex:0 0 auto;
-  border:1px solid var(--line); border-radius:var(--raio-pill);
-  background:transparent; color:rgb(var(--muted));
-  font-family:'DM Mono',monospace; font-size:12px; font-weight:500; cursor:pointer;
-  display:grid; place-items:center; transition:background .15s, color .15s;
-}
-.vel-btn:hover{ background:var(--fill); color:rgb(var(--text)); }
 
 /* progresso */
 .progresso{ padding:0 20px 14px; }
@@ -140,9 +131,10 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
 .av-bot .inicial{ font-family:'DM Sans',sans-serif; font-weight:700; font-size:14px; color:rgb(var(--accent-dim)); }
 .av-bot.oculto{ visibility:hidden; }
 
-/* botão de ouvir cada mensagem (ao lado do texto) */
+/* áudio de cada mensagem (play + velocidade) — centralizado na vertical com a bolha */
+.msg-audio{ flex:0 0 auto; align-self:center; display:flex; align-items:center; gap:6px; }
 .play-msg{
-  flex:0 0 auto; width:30px; height:30px; margin-bottom:1px;
+  flex:0 0 auto; align-self:center; width:30px; height:30px;
   border:none; border-radius:50%; cursor:pointer;
   background:var(--accent-soft); color:rgb(var(--accent-dim));
   display:grid; place-items:center; transition:transform .12s, background .15s, color .15s;
@@ -150,7 +142,15 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
 .play-msg:active{ transform:scale(.9); }
 .play-msg svg{ width:13px; height:13px; }
 .play-msg.tocando{ background:rgb(var(--accent)); color:rgb(var(--sobre-accent)); }
-.play-opcoes{ align-self:flex-end; }
+.vel-msg{
+  flex:0 0 auto; padding:0 8px; height:24px; cursor:pointer;
+  border:1px solid var(--line); border-radius:var(--raio-pill);
+  background:transparent; color:rgb(var(--muted));
+  font-family:'DM Mono',monospace; font-size:11px; font-weight:500;
+  display:grid; place-items:center; transition:transform .12s, background .15s, color .15s;
+}
+.vel-msg:active{ transform:scale(.92); }
+.vel-msg:hover{ background:var(--fill); color:rgb(var(--text)); }
 
 .bolha{
   max-width:min(80%,420px);
@@ -453,7 +453,6 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
         <img class="logo-light" src="img/logo-mark-light.png" alt="Tatá">
         <div class="nome">TATÁ<span> ADMISSÃO</span></div>
       </div>
-      <button class="vel-btn tap" id="btn-velocidade" aria-label="Velocidade da voz">1×</button>
     </div>
     <div class="progresso">
       <div class="barra"><i id="barra"></i></div>
@@ -754,8 +753,8 @@ const primeiroNome = () => (candidato.nome || '').trim().split(/\s+/)[0] || '';
 const temVoz = 'speechSynthesis' in window;
 let vozPt = null;
 let velocidade = 1;          // 1 | 1.5 | 2
+try { velocidade = parseFloat(localStorage.getItem('tp_vel')) || 1; } catch(e){}
 let btnTocando = null;
-const btnVel = $('#btn-velocidade');
 
 const ICO_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
 const ICO_STOP = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="3"/></svg>';
@@ -814,18 +813,15 @@ function tocarMensagem(btn, html){
   sintetizar(html, () => { if (btnTocando === btn) resetBtnTocando(); });
 }
 
-/* controle de velocidade (global), no cabeçalho */
-if (!temVoz){ if (btnVel) btnVel.style.display = 'none'; }
-else {
-  try { velocidade = parseFloat(localStorage.getItem('tp_vel')) || 1; } catch(e){}
-  const pintarVel = () => { btnVel.textContent = (velocidade % 1 ? velocidade.toFixed(1) : velocidade) + '×'; };
-  pintarVel();
-  btnVel.addEventListener('click', () => {
-    velocidade = velocidade >= 2 ? 1 : (velocidade === 1 ? 1.5 : 2);
-    try { localStorage.setItem('tp_vel', String(velocidade)); } catch(e){}
-    pintarVel();
-    if (btnTocando){ const b = btnTocando; const h = b._falarHtml; pararVoz(); tocarMensagem(b, h); }  // re-toca na nova velocidade
-  });
+/* velocidade: o controle fica ao lado do play de cada mensagem; o valor é
+   global e sincroniza entre todas */
+const rotuloVel = () => (velocidade % 1 ? velocidade.toFixed(1) : velocidade) + '×';
+function sincronizarVel(){ document.querySelectorAll('.vel-msg').forEach(b => b.textContent = rotuloVel()); }
+function ciclarVel(){
+  velocidade = velocidade >= 2 ? 1 : (velocidade === 1 ? 1.5 : 2);
+  try { localStorage.setItem('tp_vel', String(velocidade)); } catch(e){}
+  sincronizarVel();
+  if (btnTocando){ const b = btnTocando; const h = b._falarHtml; pararVoz(); tocarMensagem(b, h); }  // re-toca na nova velocidade
 }
 
 /* ── Máscaras ─────────────────────────────────────── */
@@ -896,12 +892,17 @@ const interativo = p => ['texto','opcoes','upload'].includes(p.tipo);
 function bolhaBot(html, primeira = true){
   const l = document.createElement('div');
   l.className = 'linha de-bot';
+  const audio = temVoz ? `<div class="msg-audio">
+      <button class="play-msg" aria-label="Ouvir esta mensagem">${ICO_PLAY}</button>
+      <button class="vel-msg" aria-label="Velocidade da voz">${rotuloVel()}</button>
+    </div>` : '';
   l.innerHTML = `<div class="av-bot${primeira ? '' : ' oculto'}">${avatarSara()}</div>
-                 <div class="bolha">${html}</div>
-                 ${temVoz ? `<button class="play-msg" aria-label="Ouvir esta mensagem">${ICO_PLAY}</button>` : ''}`;
+                 <div class="bolha">${html}</div>${audio}`;
   elMsgs.appendChild(l); rolar();
-  const btn = l.querySelector('.play-msg');
-  if (btn){ btn._falarHtml = html; btn.addEventListener('click', () => tocarMensagem(btn, html)); }
+  const btnP = l.querySelector('.play-msg');
+  if (btnP){ btnP._falarHtml = html; btnP.addEventListener('click', () => tocarMensagem(btnP, html)); }
+  const btnV = l.querySelector('.vel-msg');
+  if (btnV) btnV.addEventListener('click', ciclarVel);
   return l;
 }
 function bolhaUser(html){
