@@ -520,9 +520,13 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
 const ROTEIRO = [
   /* ── Abertura ───────────────────────────────────── */
   { id:'abertura', tipo:'fala', grupo:'Boas-vindas', falas:[
-      'Oi! Eu sou a <b>Sara</b>, a assistente virtual do <b>Tatá Sushi</b> 🍣',
-      'Que bom ter você com a gente! Vou te acompanhar na sua admissão por aqui mesmo — é rápido, leva uns <b>10 minutinhos</b>.',
-      'A gente vai fazer em 3 partes:<ul class="lista"><li>Seus dados pessoais e endereço</li><li>Dados bancários e uniforme</li><li>Envio dos documentos (pode ser foto pelo celular)</li></ul><span class="obs">Pode parar e voltar depois — nada se perde.</span>'
+      /* A apresentação e os parabéns acontecem lá fora (mensagem do WhatsApp).
+         Aqui dentro a conversa já começa em modo continuidade, pelo nome. */
+      () => candidato.nome
+        ? `Oi, ${primeiroNome()}! 👋 Que bom que você chegou.`
+        : 'Oi! 👋 Que bom que você chegou.',
+      'A gente já se falou por mensagem — agora é <b>por aqui</b> que a sua admissão acontece de verdade. É rapidinho, uns <b>10 minutinhos</b>.',
+      'Vai ser em 3 partes:<ul class="lista"><li>Seus dados pessoais e endereço</li><li>Dados bancários e uniforme</li><li>Envio dos documentos (pode ser foto pelo celular)</li></ul><span class="obs">Pode parar e voltar quando quiser, dentro do prazo — nada se perde.</span>'
     ]},
   { id:'comecar', tipo:'opcoes', grupo:'Boas-vindas', pergunta:'Bora começar?',
     campo:'_inicio', rotulo:'Início', ocultarRevisao:true,
@@ -718,6 +722,8 @@ const so = v => (v || '').replace(/\D/g, '');
 const elMsgs = $('#msgs'), elComp = $('#composer');
 
 let estado = { i:0, dados:{}, arquivos:{}, retorno:null, protocolo:null };
+let candidato = { nome: '' };   // vem da validação de acesso (na simulação, um nome fixo)
+const primeiroNome = () => (candidato.nome || '').trim().split(/\s+/)[0] || '';
 
 /* ── Máscaras ─────────────────────────────────────── */
 const MASCARAS = {
@@ -849,7 +855,10 @@ async function rodar(){
   atualizarProgresso(passo);
 
   if (passo.tipo === 'fala'){
-    for (let k = 0; k < passo.falas.length; k++) await falarBot(passo.falas[k], k === 0);
+    for (let k = 0; k < passo.falas.length; k++){
+      const f = passo.falas[k];
+      await falarBot(typeof f === 'function' ? f() : f, k === 0);
+    }
     avancar(); return;
   }
 
@@ -1176,6 +1185,7 @@ $('#copiar-json').addEventListener('click', async e => {
 function reiniciar(){
   Object.values(estado.arquivos).forEach(a => a.itens.forEach(i => i.url && URL.revokeObjectURL(i.url)));
   estado = { i:0, dados:{}, arquivos:{}, retorno:null, protocolo:null };
+  candidato = { nome: '' };
   grupoAtual = 'Boas-vindas';
   elMsgs.innerHTML = ''; elComp.innerHTML = '';
   $('#modal').classList.remove('aberto');
@@ -1187,6 +1197,7 @@ function reiniciar(){
    SIMULAÇÃO: no ar, os 4 dígitos e o nome vêm do backend
    (Edge Function admissao-acesso). Aqui o final é fixo pra demonstrar. */
 const DEMO_CPF4 = '1234';
+const DEMO_NOME = 'Maria Aparecida da Silva';   // simulação: no ar, o nome vem da validação
 const MAX_TENTATIVAS = 5;
 let tentativasGate = 0;
 
@@ -1213,6 +1224,7 @@ function validarGate(){
   const v = gateInputs.map(i => i.value).join('');
   if (v.length < 4) return;
   if (v === DEMO_CPF4){
+    candidato.nome = DEMO_NOME;   // simulação; no ar, o nome vem junto da validação de acesso
     gateMsg.textContent = '';
     gateEl.classList.add('saindo');
     setTimeout(() => { gateEl.style.display = 'none'; comecarFluxo(); }, 320);
