@@ -520,7 +520,7 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
 const ROTEIRO = [
   /* ── Abertura ───────────────────────────────────── */
   { id:'abertura', tipo:'fala', grupo:'Boas-vindas', falas:[
-      'Oi! Eu sou a <b>Sarah</b>, a assistente virtual do <b>Tatá Sushi</b> 🍣',
+      'Oi! Eu sou a <b>Sara</b>, a assistente virtual do <b>Tatá Sushi</b> 🍣',
       'Que bom ter você com a gente! Vou te acompanhar na sua admissão por aqui mesmo — é rápido, leva uns <b>10 minutinhos</b>.',
       'A gente vai fazer em 3 partes:<ul class="lista"><li>Seus dados pessoais e endereço</li><li>Dados bancários e uniforme</li><li>Envio dos documentos (pode ser foto pelo celular)</li></ul><span class="obs">Pode parar e voltar depois — nada se perde.</span>'
     ]},
@@ -770,13 +770,13 @@ const ICO = {
   alerta:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16.5v.01"/></svg>'
 };
 
-/* Avatar da Sarah (assistente virtual).
-   Quando tiver a foto, é só preencher SARAH_FOTO com a URL pública do bucket
+/* Avatar da Sara (assistente virtual).
+   Quando tiver a foto, é só preencher SARA_FOTO com a URL pública do bucket
    `avatares` (ex.: https://aoqsbusfrffapjglpqjk.supabase.co/storage/v1/object/public/avatares/<matricula>.jpg)
    ou com um arquivo local (ex.: 'img/sarah.jpg'). Vazio = mostra a inicial "S". */
-const SARAH_FOTO = '';
-const avatarSarah = () => SARAH_FOTO
-  ? `<img src="${SARAH_FOTO}" alt="Sarah">`
+const SARA_FOTO = '';
+const avatarSara = () => SARA_FOTO
+  ? `<img src="${SARA_FOTO}" alt="Sara">`
   : `<span class="inicial">S</span>`;
 
 /* ── Passos visíveis (respeitando condições) ──────── */
@@ -787,7 +787,7 @@ const interativo = p => ['texto','opcoes','upload'].includes(p.tipo);
 function bolhaBot(html, primeira = true){
   const l = document.createElement('div');
   l.className = 'linha de-bot';
-  l.innerHTML = `<div class="av-bot${primeira ? '' : ' oculto'}">${avatarSarah()}</div>
+  l.innerHTML = `<div class="av-bot${primeira ? '' : ' oculto'}">${avatarSara()}</div>
                  <div class="bolha">${html}</div>`;
   elMsgs.appendChild(l); rolar(); return l;
 }
@@ -816,7 +816,7 @@ new ResizeObserver(rolar).observe(elComp);
 function digitando(){
   const l = document.createElement('div');
   l.className = 'linha de-bot';
-  l.innerHTML = `<div class="av-bot">${avatarSarah()}</div>
+  l.innerHTML = `<div class="av-bot">${avatarSara()}</div>
                  <div class="pontos"><i></i><i></i><i></i></div>`;
   elMsgs.appendChild(l); rolar();
   return l;
