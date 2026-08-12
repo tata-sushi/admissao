@@ -124,10 +124,11 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
 .linha.de-user{ justify-content:flex-end; }
 
 .av-bot{
-  width:28px; height:28px; border-radius:var(--raio-pill); flex:0 0 auto;
+  width:30px; height:30px; border-radius:50%; overflow:hidden; flex:0 0 auto;
   background:var(--accent-soft); display:grid; place-items:center; margin-bottom:2px;
 }
-.av-bot img{ width:17px; height:17px; object-fit:contain; }
+.av-bot img{ width:100%; height:100%; object-fit:cover; }
+.av-bot .inicial{ font-family:'DM Sans',sans-serif; font-weight:700; font-size:14px; color:rgb(var(--accent-dim)); }
 .av-bot.oculto{ visibility:hidden; }
 
 .bolha{
@@ -519,8 +520,8 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
 const ROTEIRO = [
   /* ── Abertura ───────────────────────────────────── */
   { id:'abertura', tipo:'fala', grupo:'Boas-vindas', falas:[
-      'Oi! Eu sou o assistente de admissão do <b>Tatá Sushi</b> 🍣',
-      'Que bom ter você com a gente! Vou te guiar na sua admissão por aqui mesmo — é rápido, leva uns <b>10 minutinhos</b>.',
+      'Oi! Eu sou a <b>Sarah</b>, a assistente virtual do <b>Tatá Sushi</b> 🍣',
+      'Que bom ter você com a gente! Vou te acompanhar na sua admissão por aqui mesmo — é rápido, leva uns <b>10 minutinhos</b>.',
       'A gente vai fazer em 3 partes:<ul class="lista"><li>Seus dados pessoais e endereço</li><li>Dados bancários e uniforme</li><li>Envio dos documentos (pode ser foto pelo celular)</li></ul><span class="obs">Pode parar e voltar depois — nada se perde.</span>'
     ]},
   { id:'comecar', tipo:'opcoes', grupo:'Boas-vindas', pergunta:'Bora começar?',
@@ -769,7 +770,14 @@ const ICO = {
   alerta:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16.5v.01"/></svg>'
 };
 
-const LOGO_BOT = '<img class="logo-dark" src="img/logo-mark.png" alt=""><img class="logo-light" src="img/logo-mark-light.png" alt="">';
+/* Avatar da Sarah (assistente virtual).
+   Quando tiver a foto, é só preencher SARAH_FOTO com a URL pública do bucket
+   `avatares` (ex.: https://aoqsbusfrffapjglpqjk.supabase.co/storage/v1/object/public/avatares/<matricula>.jpg)
+   ou com um arquivo local (ex.: 'img/sarah.jpg'). Vazio = mostra a inicial "S". */
+const SARAH_FOTO = '';
+const avatarSarah = () => SARAH_FOTO
+  ? `<img src="${SARAH_FOTO}" alt="Sarah">`
+  : `<span class="inicial">S</span>`;
 
 /* ── Passos visíveis (respeitando condições) ──────── */
 const visiveis = () => ROTEIRO.filter(p => !p.condicao || p.condicao(estado.dados));
@@ -779,7 +787,7 @@ const interativo = p => ['texto','opcoes','upload'].includes(p.tipo);
 function bolhaBot(html, primeira = true){
   const l = document.createElement('div');
   l.className = 'linha de-bot';
-  l.innerHTML = `<div class="av-bot${primeira ? '' : ' oculto'}">${LOGO_BOT}</div>
+  l.innerHTML = `<div class="av-bot${primeira ? '' : ' oculto'}">${avatarSarah()}</div>
                  <div class="bolha">${html}</div>`;
   elMsgs.appendChild(l); rolar(); return l;
 }
@@ -808,7 +816,7 @@ new ResizeObserver(rolar).observe(elComp);
 function digitando(){
   const l = document.createElement('div');
   l.className = 'linha de-bot';
-  l.innerHTML = `<div class="av-bot">${LOGO_BOT}</div>
+  l.innerHTML = `<div class="av-bot">${avatarSarah()}</div>
                  <div class="pontos"><i></i><i></i><i></i></div>`;
   elMsgs.appendChild(l); rolar();
   return l;
