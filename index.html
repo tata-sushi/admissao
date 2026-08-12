@@ -100,6 +100,9 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
 }
 .ico-btn:hover{ background:var(--fill); color:rgb(var(--text)); }
 .ico-btn svg{ width:19px; height:19px; }
+.ico-btn.ativo{ background:var(--accent-soft); color:rgb(var(--accent-dim)); }
+@keyframes pulsaVoz{ 0%,100%{ box-shadow:0 0 0 0 rgb(var(--accent) / .35); } 50%{ box-shadow:0 0 0 5px rgb(var(--accent) / 0); } }
+.ico-btn.ativo.falando{ animation:pulsaVoz 1.1s ease-in-out infinite; }
 
 /* progresso */
 .progresso{ padding:0 20px 14px; }
@@ -432,6 +435,7 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
         <img class="logo-light" src="img/logo-mark-light.png" alt="Tatá">
         <div class="nome">TATÁ<span> ADMISSÃO</span></div>
       </div>
+      <button class="ico-btn tap" id="btn-voz" aria-label="Ouvir em voz alta"></button>
     </div>
     <div class="progresso">
       <div class="barra"><i id="barra"></i></div>
@@ -725,6 +729,74 @@ let estado = { i:0, dados:{}, arquivos:{}, retorno:null, protocolo:null };
 let candidato = { nome: '' };   // vem da validação de acesso (na simulação, um nome fixo)
 const primeiroNome = () => (candidato.nome || '').trim().split(/\s+/)[0] || '';
 
+/* ── Voz da Sara (leitura em voz alta) ─────────────────
+   Usa a síntese de voz do próprio aparelho (Web Speech API): grátis, sem
+   backend. No celular, as vozes em pt-BR são boas. Pensado para quem tem
+   dificuldade de leitura. */
+const temVoz = 'speechSynthesis' in window;
+let vozLigada = false;
+let vozPt = null;
+const btnVoz = $('#btn-voz');
+
+const ICO_VOZ_ON  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.8 6a9 9 0 0 1 0 12"/></svg>';
+const ICO_VOZ_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M22 9l-6 6M16 9l6 6"/></svg>';
+
+function escolherVoz(){
+  if (!temVoz) return;
+  const vs = speechSynthesis.getVoices();
+  vozPt = vs.find(v => /pt[-_]BR/i.test(v.lang)) || vs.find(v => /^pt/i.test(v.lang)) || null;
+}
+if (temVoz){ escolherVoz(); speechSynthesis.onvoiceschanged = escolherVoz; }
+
+/* limpa tags, emojis e símbolos antes de falar */
+const textoParaVoz = html => String(html)
+  .replace(/<li>/gi, '. ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/[\u{1F000}-\u{1FAFF}\u{2190}-\u{21FF}\u{2300}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{2000}-\u{206F}]/gu, ' ')
+  .replace(/\s+([.,!?])/g, '$1')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+function falar(html){
+  return new Promise(resolve => {
+    if (!temVoz || !vozLigada) return resolve();
+    const texto = textoParaVoz(html);
+    if (!texto) return resolve();
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(texto);
+    u.lang = 'pt-BR'; if (vozPt) u.voice = vozPt; u.rate = 1; u.pitch = 1;
+    /* trava de segurança: se onend não disparar (ex.: sem vozes), segue o fluxo */
+    const guarda = setTimeout(fim, Math.max(3500, texto.length * 95));
+    function fim(){ clearTimeout(guarda); btnVoz.classList.remove('falando'); resolve(); }
+    u.onend = fim; u.onerror = fim;
+    btnVoz.classList.add('falando');
+    speechSynthesis.speak(u);
+  });
+}
+function pararVoz(){ if (temVoz) speechSynthesis.cancel(); btnVoz.classList.remove('falando'); }
+/* iOS exige que a 1ª fala saia de dentro de um gesto — isto "destrava" */
+function destravarVoz(){ if (temVoz && vozLigada){ const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } }
+
+function pintarVoz(){
+  btnVoz.innerHTML = vozLigada ? ICO_VOZ_ON : ICO_VOZ_OFF;
+  btnVoz.classList.toggle('ativo', vozLigada);
+  btnVoz.setAttribute('aria-label', vozLigada ? 'Desligar a voz' : 'Ouvir em voz alta');
+}
+if (!temVoz){ btnVoz.style.display = 'none'; }
+else {
+  try { vozLigada = localStorage.getItem('tp_voz') === '1'; } catch(e){}
+  pintarVoz();
+  btnVoz.addEventListener('click', () => {
+    vozLigada = !vozLigada;
+    try { localStorage.setItem('tp_voz', vozLigada ? '1' : '0'); } catch(e){}
+    pintarVoz();
+    if (!vozLigada){ pararVoz(); return; }
+    /* ao ligar, lê a última mensagem da Sara como amostra (gesto direto) */
+    const ultima = [...elMsgs.querySelectorAll('.de-bot .bolha')].pop();
+    if (ultima) falar(ultima.innerHTML); else destravarVoz();
+  });
+}
+
 /* ── Máscaras ─────────────────────────────────────── */
 const MASCARAS = {
   cpf: v => so(v).slice(0,11)
@@ -836,7 +908,9 @@ async function falarBot(html, primeira = true){
   await espera(Math.min(1300, Math.max(480, texto.length * 13)));
   p.remove();
   bolhaBot(html, primeira);
-  await espera(140);
+  /* com a voz ligada, o ritmo acompanha a fala; sem voz, a pausa curta de sempre */
+  if (vozLigada && temVoz) await falar(html);
+  else await espera(140);
 }
 
 /* ── Ciclo principal ──────────────────────────────── */
@@ -950,7 +1024,12 @@ function chipsInline(opcoes, aoEscolher){
       ${opcoes.map((o, k) => `<button class="chip${o.principal ? ' principal' : ''}" data-k="${k}">${o.label}</button>`).join('')}
     </div>`;
   elMsgs.appendChild(linha); rolar();
+  /* com a voz ligada, lê as opções em voz alta (pra quem não vai ler os botões) */
+  if (vozLigada && temVoz && opcoes.length){
+    falar('Você pode responder: ' + opcoes.map(o => textoParaVoz(o.label)).join('. Ou: ') + '.');
+  }
   linha.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => {
+    pararVoz();
     linha.remove();                       /* some com as opções ao escolher */
     aoEscolher(opcoes[+b.dataset.k]);
   }));
@@ -1183,6 +1262,7 @@ $('#copiar-json').addEventListener('click', async e => {
 });
 
 function reiniciar(){
+  pararVoz();
   Object.values(estado.arquivos).forEach(a => a.itens.forEach(i => i.url && URL.revokeObjectURL(i.url)));
   estado = { i:0, dados:{}, arquivos:{}, retorno:null, protocolo:null };
   candidato = { nome: '' };
@@ -1225,6 +1305,7 @@ function validarGate(){
   if (v.length < 4) return;
   if (v === DEMO_CPF4){
     candidato.nome = DEMO_NOME;   // simulação; no ar, o nome vem junto da validação de acesso
+    destravarVoz();               // destrava a voz no iOS (estamos dentro do gesto)
     gateMsg.textContent = '';
     gateEl.classList.add('saindo');
     setTimeout(() => { gateEl.style.display = 'none'; comecarFluxo(); }, 320);
