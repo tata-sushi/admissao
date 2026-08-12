@@ -771,12 +771,12 @@ const ICO = {
 };
 
 /* Avatar da Sara (assistente virtual).
-   Quando tiver a foto, é só preencher SARA_FOTO com a URL pública do bucket
-   `avatares` (ex.: https://aoqsbusfrffapjglpqjk.supabase.co/storage/v1/object/public/avatares/<matricula>.jpg)
-   ou com um arquivo local (ex.: 'img/sarah.jpg'). Vazio = mostra a inicial "S". */
-const SARA_FOTO = '';
+   A foto vive no bucket público `avatares` (arquivo 7272.jpg). Para trocar,
+   basta substituir esse arquivo no Storage — sem mexer no código.
+   Se a imagem não carregar, cai automaticamente na inicial "S". */
+const SARA_FOTO = 'https://aoqsbusfrffapjglpqjk.supabase.co/storage/v1/object/public/avatares/7272.jpg';
 const avatarSara = () => SARA_FOTO
-  ? `<img src="${SARA_FOTO}" alt="Sara">`
+  ? `<img src="${SARA_FOTO}" alt="Sara" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'inicial',textContent:'S'}))">`
   : `<span class="inicial">S</span>`;
 
 /* ── Passos visíveis (respeitando condições) ──────── */
