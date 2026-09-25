@@ -326,7 +326,9 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
 
 /* opções dentro do fluxo da conversa (não na barra de baixo) */
 .opcoes-inline{ margin-top:2px; margin-bottom:14px; }
-.opcoes-inline .chips{ justify-content:flex-end; max-width:min(92%,460px); }
+/* pilha vertical de botões da mesma largura, alinhada à direita */
+.opcoes-inline .chips{ flex-direction:column; align-items:stretch; gap:8px; width:min(80%,320px); }
+.opcoes-inline .chip{ width:100%; text-align:center; padding:13px 18px; }
 
 /* upload — padrão .icon-tile do app */
 .solta{
