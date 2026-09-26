@@ -756,7 +756,7 @@ const ROTEIRO = [
   { id:'banco', tipo:'opcoes', grupo:'Dados bancários', campo:'conta_itau', rotulo:'Conta no Itaú',
     pergunta:'No TATÁ os pagamentos acontecem pelo banco <b>Itaú</b>, por contas do tipo Corrente ou Salário. Você tem conta salário ou corrente no Itaú?',
     tituloOpcoes:'Conta no Itaú?',
-    opcoes:[{v:'sim',label:'Sim, já tenho', principal:true},{v:'nao',label:'Não, vou precisar abrir'}] },
+    opcoes:[{v:'sim',label:'Sim, já tenho', principal:true},{v:'nao',label:'Não, preciso abrir'}] },
   { id:'banco_abrir', tipo:'fala', grupo:'Dados bancários', condicao:d => d.conta_itau === 'nao', ocultarRevisao:true,
     falas:[ 'Sem problema! Vamos te enviar uma carta para abertura da conta.' ] },
   { id:'tipo_conta', tipo:'opcoes', grupo:'Dados bancários', campo:'tipo_conta', rotulo:'Tipo de conta',
