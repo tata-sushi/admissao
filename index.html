@@ -602,13 +602,13 @@ const ROTEIRO = [
   { id:'abertura', tipo:'fala', grupo:'Boas-vindas', falas:[
       /* Mensagens curtas, uma de cada vez (estilo WhatsApp). */
       { fala: () => candidato.nome
-        ? `Olá, ${primeiroNome()}! Tudo bem?<br>Parabéns pela sua admissão! 👏🎉`
-        : 'Olá! Tudo bem?<br>Parabéns pela sua admissão! 👏🎉', apos: 1200 },
+        ? `Olá, ${primeiroNome()}! Tudo bem?<br>Parabéns pela sua conquista! 👏🎉`
+        : 'Olá! Tudo bem?<br>Parabéns pela sua conquista! 👏🎉', apos: 1200 },
       'Eu sou a Sara, assistente virtual do <b>TATÁ Sushi</b>, e vou te acompanhar nesse processo de admissão.',
       'Antes de começar, deixa eu te explicar como funciona!',
       'Eu e você vamos conversando por mensagem, aqui mesmo, enquanto confirmo algumas informações e peço os documentos necessários para o seu cadastro.<br><br>Tudo muito simples!!',
-      'E ainda será um processo rapidinho, no máximo <b>10 minutos</b>.',
-      'Agora, se tiver algum problema ou dúvida durante o processo, é só tocar no <span class="grifo">?</span> no canto superior direito, que o pessoal do RH vai te ajudar.',
+      'É um processo rapidinho, no máximo <b>10 minutos</b>.',
+      'E se tiver algum problema ou dúvida durante o processo, é só tocar no <span class="grifo">?</span> no canto superior direito, que algum analista vai te ajudar.',
       'Só atenção ao prazo, pois esse link ficará disponível por <b>48 horas</b>.'
     ]},
   { id:'comecar', tipo:'opcoes', grupo:'Boas-vindas', pergunta:'Bora começar?!',
@@ -650,7 +650,7 @@ const ROTEIRO = [
 
   { id:'nascimento', tipo:'data', grupo:'Dados pessoais', campo:'nascimento', rotulo:'Data de nascimento',
     pergunta:'E qual sua <b>data de nascimento</b>?', minIdade:16,
-    msgIdade:'Para a admissão é preciso ter mais de 15 anos. Pode conferir a data?' },
+    msgIdade:'Parece que há algo errado com a data. Consegue verificar?' },
 
   { id:'telefone', tipo:'texto', grupo:'Dados pessoais', campo:'telefone', rotulo:'WhatsApp',
     pergunta:() => (candidato.telefone && so(candidato.telefone).length >= 10)
@@ -665,7 +665,7 @@ const ROTEIRO = [
     validar:v => so(v).length >= 10 || 'Faltou algum número. Confere o DDD?' },
 
   { id:'email', tipo:'texto', grupo:'Dados pessoais', campo:'email', rotulo:'E-mail',
-    pergunta:'Obrigada! Quanto ao seu <b>e-mail</b>, eu ainda não tenho. Pode me passar?',
+    pergunta:'Obrigada! Quanto ao seu <b>e-mail</b>, eu ainda não tenho. Me informe, por favor!?',
     placeholder:'voce@email.com', teclado:'email',
     validar:v => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v.trim()) || 'Esse e-mail não parece certo. Consegue revisar?<br>Coloque só o e-mail.' },
 
@@ -698,9 +698,8 @@ const ROTEIRO = [
     pergunta:'E o <b>bairro</b>?', placeholder:'Ex.: Butantã',
     validar:v => v.trim().length >= 2 || 'Escreva o bairro.' },
 
-  { id:'cidade_estado', tipo:'texto', grupo:'Endereço', campo:'cidade_estado', rotulo:'Cidade e estado',
-    pergunta:'E qual a sua <b>cidade e estado</b>?', placeholder:'Ex.: São Paulo/SP',
-    validar:v => v.trim().length >= 3 || 'Escreva a cidade e o estado (ex.: São Paulo/SP).' },
+  { id:'cidade_estado', tipo:'cidade', grupo:'Endereço', campo:'cidade_estado', rotulo:'Cidade e estado',
+    pergunta:'E qual a sua <b>cidade</b>? (estado de São Paulo)', placeholder:'Comece a digitar sua cidade…' },
 
   { id:'transporte', tipo:'opcoes', grupo:'Endereço', campo:'vale_transporte', rotulo:'Vale-transporte',
     pergunta:'Você vai precisar de <b>Vale-Transporte</b> para ir e voltar do trabalho?',
@@ -714,7 +713,7 @@ const ROTEIRO = [
 
   /* ── Trabalho e uniforme ────────────────────────── */
   { id:'escolaridade', tipo:'opcoes', grupo:'Trabalho e uniforme', campo:'escolaridade', rotulo:'Escolaridade',
-    pergunta:'Obrigada.<br>Já preenchemos bastante coisa. Parabéns!!!<br>Agora, vamos para a sua formação. Qual sua <b>escolaridade</b>?',
+    pergunta:'Parabéns!!!<br>Já preenchemos bastante coisa.<br>Agora, vamos para a sua formação. Qual sua <b>escolaridade</b>?',
     opcoes:[{v:'fund_inc',label:'Fundamental incompleto'},{v:'fund',label:'Fundamental completo'},
             {v:'medio_inc',label:'Médio incompleto'},{v:'medio',label:'Médio completo'},
             {v:'sup_inc',label:'Superior incompleto'},{v:'sup',label:'Superior completo'}] },
@@ -730,7 +729,7 @@ const ROTEIRO = [
     opcoes:[{v:'PP',label:'PP'},{v:'P',label:'P'},{v:'M',label:'M'},{v:'G',label:'G'},{v:'GG',label:'GG'},{v:'XG',label:'XG'}] },
 
   { id:'calcado', tipo:'opcoes', grupo:'Trabalho e uniforme', campo:'calcado', rotulo:'Nº do sapato',
-    pergunta:'E para finalizar, selecione o tamanho do <b>sapato</b>.',
+    pergunta:'E para finalizar, qual o tamanho do <b>sapato</b>?',
     tituloOpcoes:'Tamanho do sapato', grade:true,
     opcoes:[{v:'32',label:'32'},{v:'33',label:'33'},{v:'34',label:'34'},{v:'35',label:'35'},{v:'36',label:'36'},{v:'37',label:'37'},{v:'38',label:'38'},{v:'39',label:'39'},{v:'40',label:'40'},{v:'41',label:'41'},{v:'42',label:'42'},{v:'43',label:'43'},{v:'44',label:'44'},{v:'45',label:'45'}] },
 
@@ -749,7 +748,8 @@ const ROTEIRO = [
 
   /* ── Dados bancários ────────────────────────────── */
   { id:'banco_info', tipo:'fala', grupo:'Dados bancários', falas:[
-      () => `Anotado.<br>Chegamos na parte boa${primeiroNome() ? ', ' + primeiroNome() : ''}! 💰`,
+      'Anotado.',
+      () => `Chegamos na parte boa${primeiroNome() ? ', ' + primeiroNome() : ''}! 💰`,
       'Vamos aos <b>dados bancários</b> para o pagamento do salário. 💳'
     ]},
   { id:'banco', tipo:'opcoes', grupo:'Dados bancários', campo:'conta_itau', rotulo:'Conta no Itaú',
@@ -761,7 +761,7 @@ const ROTEIRO = [
   { id:'tipo_conta', tipo:'opcoes', grupo:'Dados bancários', campo:'tipo_conta', rotulo:'Tipo de conta',
     condicao:d => d.conta_itau === 'sim', tituloOpcoes:'Tipo de conta',
     pergunta:'Qual o tipo da sua conta?',
-    opcoes:[{v:'corrente',label:'Corrente'},{v:'salario',label:'Salário'},{v:'poupanca',label:'Poupança'}] },
+    opcoes:[{v:'corrente',label:'Corrente'},{v:'salario',label:'Salário'}] },
   { id:'agencia', tipo:'texto', grupo:'Dados bancários', campo:'agencia', rotulo:'Agência',
     condicao:d => d.conta_itau === 'sim',
     pergunta:'OK! Qual o número da <b>agência</b> (com dígito, se tiver)?', placeholder:'Ex.: 0001', teclado:'numeric',
@@ -774,7 +774,7 @@ const ROTEIRO = [
 
   /* ── Documentos ─────────────────────────────────── */
   { id:'docs_info', tipo:'fala', grupo:'Documentos', falas:[
-      'Oba!!!!<br>Estamos quase lá! Falta só a parte dos <b>documentos</b>. 📎',
+      'Estamos quase lá! Falta só a parte de anexar os <b>documentos</b>. 📎',
       'Para anexar os documentos, você pode fotografar ou anexar do seu celular. Só cuidado para não cortar a imagem ou deixar com reflexo.<br>Os tipos de arquivo que aceito são: JPG, PNG ou PDF, até 10 MB.'
     ]},
 
@@ -783,35 +783,35 @@ const ROTEIRO = [
     recebido:'Recebido! Agora, vamos para o <b>CPF</b>. Pode ser a CNH também.' },
 
   { id:'doc_cpf', tipo:'upload', grupo:'Documentos', doc:'cpf_doc', rotulo:'CPF',
-    recebido:'Recebido. Hora do <b>comprovante de residência</b> (conta de luz, água, internet…).' },
+    recebido:'Recebido! Hora do <b>comprovante de residência</b> (pode ser conta de luz, água, internet…).' },
 
   { id:'doc_residencia', tipo:'upload', grupo:'Documentos', doc:'residencia', rotulo:'Comprovante de residência',
-    recebido:'Recebido! Agora o PDF da <b>Carteira de Trabalho Digital</b>.<br>Você consegue baixando o app "Carteira de Trabalho Digital" → Contratos → Compartilhar.' },
+    recebido:'Recebido! Agora, me mande o PDF ou foto da <b>Carteira de Trabalho</b> física ou digital.<br>Você consegue baixando o app <span class="grifo">Carteira de Trabalho Digital → Contratos → Compartilhar</span>.' },
 
   { id:'doc_ctps', tipo:'upload', grupo:'Documentos', doc:'ctps', rotulo:'Carteira de Trabalho digital',
-    recebido:() => `Recebido! ✅ ${primeiroNome() ? primeiroNome() + ', agora' : 'Agora'} o seu <b>comprovante de escolaridade</b> (histórico ou certificado).` },
+    recebido:() => `Recebido! ${primeiroNome() ? primeiroNome() + ', agora' : 'Agora'} o seu <b>comprovante de escolaridade</b> (pode ser histórico escolar ou certificado de conclusão).` },
 
   { id:'doc_escolaridade', tipo:'upload', grupo:'Documentos', doc:'escolaridade_doc', rotulo:'Comprovante de escolaridade',
     recebido:() => estado.dados.tem_dependentes === 'sim'
       ? 'Recebido! E como você tem dependentes, preciso da <b>certidão de nascimento</b> e do <b>CPF</b> de cada um.'
-      : 'Recebido! ✅' },
+      : 'Recebido!' },
 
   /* (os documentos de cada dependente são gerados dinamicamente abaixo) */
 
   { id:'doc_banco', tipo:'upload', grupo:'Documentos', doc:'banco_doc', rotulo:'Comprovante bancário',
     condicao:d => d.conta_itau === 'sim',
     pergunta:'Agora, um <b>comprovante da conta</b> mostrando agência, conta e seu nome.',
-    recebido:'Recebido! ✅' },
+    recebido:'Recebido!' },
 
   { id:'doc_foto', tipo:'upload', grupo:'Documentos', doc:'foto', rotulo:'Selfie', somenteCamera:true,
-    pergunta:'E para finalizar, chegou a hora da <b>selfie</b>!!!<br>Procure um lugar claro e tire uma selfie, sem boné ou máscara.',
-    recebido:'Perfeito! ✅ Selfie recebida — era o último documento.' },
+    pergunta:'E para finalizar, preciso de uma <b>selfie</b> sua!!!<br><br>Procure um lugar claro para tirar a foto. Não utilize boné ou máscara.',
+    recebido:'Recebido!' },
 
   /* ── Fechamento ─────────────────────────────────── */
   { id:'revisao', tipo:'revisao', grupo:'Conferência' },
   { id:'termo', tipo:'opcoes', grupo:'Conferência', campo:'aceite', rotulo:'Aceite',
-    pergunta:'Para finalizar: você confirma que as informações são <b>verdadeiras</b> e autoriza o Tatá Sushi a usá-las para o seu registro trabalhista, conforme a <b>LGPD</b>?',
-    opcoes:[{v:'sim',label:'Sim, concordo', principal:true},{v:'depois',label:'Não, preciso falar com o RH antes'}] },
+    pergunta:'Perfeito!<br>Para finalizar, você confirma que as informações são <b>verdadeiras</b> e autoriza o Tatá Sushi a usá-las para o seu registro trabalhista, conforme a <b>LGPD</b>?',
+    opcoes:[{v:'sim',label:'Sim, concordo', principal:true},{v:'depois',label:'Não, preciso tirar algumas dúvidas antes'}] },
   { id:'fim', tipo:'fim', grupo:'Conferência' }
 ];
 
@@ -898,7 +898,7 @@ const ROTEIRO = [
     passos.push(
       { id:`docdep${n}`, tipo:'upload', grupo:'Documentos', doc:`dependente_${n}_doc`, rotulo:`Docs do ${ord(n)} dependente`, multiplo:true, condicao:c,
         pergunta:`Do <b>${ord(n)} dependente</b>: <b>certidão de nascimento</b> e <b>CPF</b>.`,
-        recebido:'Recebido! ✅' }
+        recebido:'Recebido!' }
     );
   }
   const i = ROTEIRO.findIndex(s => s.id === 'doc_escolaridade');
@@ -1157,6 +1157,7 @@ async function rodar(){
 
   if (passo.tipo === 'texto')   return comporTexto(passo);
   if (passo.tipo === 'data')    return comporData(passo);
+  if (passo.tipo === 'cidade')  return comporCidade(passo);
   if (passo.tipo === 'opcoes')  return comporOpcoes(passo);
   if (passo.tipo === 'upload')  return comporUpload(passo);
   if (passo.tipo === 'revisao') return comporRevisao(passo);
@@ -1208,8 +1209,56 @@ function comporData(p){
   setTimeout(() => { try { inp.showPicker && inp.showPicker(); } catch(e){} }, 120);
 }
 
+/* ── Composer: cidade (autocomplete de municípios de SP) ─── */
+let _cidadesSP = null;
+async function carregarCidadesSP(){
+  if (_cidadesSP) return _cidadesSP;
+  const r = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados/SP/municipios?orderBy=nome');
+  const j = await r.json();
+  _cidadesSP = j.map(m => m.nome);
+  return _cidadesSP;
+}
+function comporCidade(p){
+  elComp.innerHTML = `
+    <div class="campo-linha">
+      <input class="campo" id="entrada" list="lista-cidades" autocomplete="off"
+             placeholder="${p.placeholder || 'Digite sua cidade…'}">
+      <datalist id="lista-cidades"></datalist>
+      <button class="enviar" id="btn-enviar" disabled aria-label="Enviar">${ICO.enviar}</button>
+    </div>`;
+  const inp = $('#entrada'), btn = $('#btn-enviar'), dl = $('#lista-cidades');
+  carregarCidadesSP().then(cs => { dl.innerHTML = cs.map(c => `<option value="${escapar(c)}"></option>`).join(''); }).catch(() => {});
+  inp.addEventListener('input', () => { inp.classList.remove('erro'); btn.disabled = inp.value.trim().length < 2; });
+  inp.focus();
+  async function enviar(){
+    const v = inp.value.trim();
+    if (v.length < 2) return;
+    const cidades = await carregarCidadesSP().catch(() => []);
+    let cidade = v.replace(/\s*\/\s*SP$/i, '').trim();
+    if (cidades.length){
+      const match = cidades.find(c => c.toLowerCase() === cidade.toLowerCase());
+      if (!match){
+        inp.classList.add('erro');
+        bolhaUser(escapar(v));
+        elComp.innerHTML = '';
+        await falarBot('Não encontrei essa cidade em São Paulo. Pode escolher uma da lista?');
+        return comporCidade(p);
+      }
+      cidade = match;
+    }
+    const val = `${cidade}/SP`;
+    bolhaUser(val);
+    estado.dados[p.campo] = val;
+    elComp.innerHTML = '';
+    await espera(200);
+    avancar();
+  }
+  btn.addEventListener('click', enviar);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter' && !btn.disabled) enviar(); });
+}
+
 function montarPergunta(p){
-  if (p.tipo === 'revisao') return `Prontinho! ${primeiroNome() ? primeiroNome() + ', agora' : 'Agora'} dá uma conferida em tudo antes de finalizar. Se tiver algo errado, é só clicar em <b>Editar</b>.`;
+  if (p.tipo === 'revisao') return `Prontinho${primeiroNome() ? ', ' + primeiroNome() : ''}! Agora, confira as informações e documentos anexados antes de finalizar. Se tiver algo errado, é só clicar em <b>Editar</b>.`;
   let h = typeof p.pergunta === 'function' ? p.pergunta() : (p.pergunta || '');
   /* a dica das opções entra na própria fala do bot */
   if (p.dica && p.tipo === 'opcoes') h += `<span class="obs">${p.dica}</span>`;
@@ -1405,7 +1454,7 @@ function comporUpload(p){
     elComp.innerHTML = '';
     await espera(300);
     const msg = typeof p.recebido === 'function' ? p.recebido()
-              : (p.recebido || `Recebido! ✅ <b>${p.rotulo}</b> está guardado.`);
+              : (p.recebido || 'Recebido!');
     if (msg) await falarBot(msg);
     avancar();
   }
@@ -1416,6 +1465,7 @@ const escapar = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;',
 
 /* ── Composer: revisão ────────────────────────────── */
 async function comporRevisao(){
+  elMsgs.querySelectorAll('.rev-confirm').forEach(e => e.remove());  /* evita empilhar o botão ao editar */
   const lista = visiveis();
   const campos = lista.filter(p => p.campo && !p.ocultarRevisao && estado.dados[p.campo] != null);
 
@@ -1462,14 +1512,13 @@ async function comporRevisao(){
 
   await espera(300);
   await falarBot('Está tudo certo? Se estiver, é só confirmar que eu envio para o RH. 😊');
-  elComp.innerHTML = `<div class="chips"><button class="chip principal" id="ok-revisao">Sim, está tudo certo</button></div>`;
-  $('#ok-revisao').addEventListener('click', async () => {
-    bolhaUser('Sim, está tudo certo');
-    elComp.innerHTML = '';
+  chipsInline([{ v:'ok', label:'Sim, está tudo certo', principal:true }], async (o) => {
+    bolhaUser(o.label);
     await espera(230);
     estado.i++;
     rodar();
   });
+  elMsgs.lastElementChild.classList.add('rev-confirm');   /* marca para poder remover ao editar */
 }
 
 function mostrar(p){
@@ -1491,7 +1540,7 @@ async function concluir(){
   estado.protocolo = 'ADM-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000);
   const primeiro = (estado.dados.nome_social || estado.dados.nome || '').split(' ')[0];
 
-  await falarBot(`Show, ${escapar(primeiro)}! Sua ficha de admissão foi enviada. 🎉<br>Agora, é só aguardar as instruções da área de <b>Gente & Gestão</b> com a data da sua Integração.`);
+  await falarBot(`Show, ${escapar(primeiro)}! Sua ficha de admissão foi enviada. 🎉<br>Agora, é só aguardar as instruções da área de <b>Gente & Gestão</b>.<br><br>Seja muito bem-vindo(a) ao time do Tatá! 🍣`);
 
   const cartao = document.createElement('div');
   cartao.className = 'linha de-bot';
@@ -1508,7 +1557,6 @@ async function concluir(){
   if (pendentes.length){
     await falarBot(`Ficou pendente: <ul class="lista">${pendentes.map(d => `<li>${d}</li>`).join('')}</ul>`, false);
   }
-  await falarBot('Seja muito bem-vindo(a) ao time Tatá! 🍣', false);
 
   elComp.innerHTML = `<div class="chips">
       <button class="chip leve" id="recomecar">Recomeçar simulação</button>
