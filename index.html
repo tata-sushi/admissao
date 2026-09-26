@@ -87,6 +87,15 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
   border-bottom:1px solid var(--line);
 }
 .topo-linha{ display:flex; align-items:center; justify-content:space-between; padding:12px 20px; }
+.ajuda-btn{
+  flex:0 0 auto; width:32px; height:32px; border-radius:50%;
+  border:1px solid var(--line); background:var(--fill);
+  font-family:'DM Sans',sans-serif; font-size:17px; font-weight:700; line-height:1;
+  color:rgb(var(--muted)); cursor:pointer; display:grid; place-items:center;
+  transition:transform .12s, background .15s, color .15s;
+}
+.ajuda-btn:hover{ background:rgb(var(--surface-3)); color:rgb(var(--text)); }
+.ajuda-btn:active{ transform:scale(.92); }
 .marca{ display:flex; align-items:center; gap:8px; min-width:0; }
 .marca img{ height:34px; width:auto; }
 .marca .nome{
@@ -352,6 +361,8 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
 .opc:hover{ background:rgb(var(--surface-3)); }
 .opc.principal{ background:rgb(var(--accent)); color:rgb(var(--sobre-accent)); border-color:transparent; text-align:center; }
 .opc.principal:hover{ background:rgb(var(--accent-dim)); }
+a.opc{ text-decoration:none; display:block; }
+.ajuda-txt{ font-size:14px; line-height:1.55; color:rgb(var(--muted)); margin:0 2px 14px; }
 @keyframes scrim-in{ to{ opacity:1; } }
 @keyframes scrim-out{ to{ opacity:0; } }
 @keyframes sheet-in{ to{ transform:translateY(0); } }
@@ -485,6 +496,7 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
         <img class="logo-light" src="img/logo-mark-light.png" alt="Tatá">
         <div class="nome">TATÁ<span> ADMISSÃO</span></div>
       </div>
+      <button class="ajuda-btn" id="btn-ajuda" aria-label="Preciso de ajuda" title="Preciso de ajuda">?</button>
     </div>
     <div class="progresso">
       <div class="barra"><i id="barra"></i></div>
@@ -576,10 +588,10 @@ const ROTEIRO = [
       /* A apresentação e os parabéns acontecem lá fora (mensagem do WhatsApp).
          Aqui dentro a conversa já começa em modo continuidade, pelo nome. */
       () => candidato.nome
-        ? `Oi, ${primeiroNome()}! 👋 Que bom que você chegou.`
-        : 'Oi! 👋 Que bom que você chegou.',
-      'A gente já se falou por mensagem — agora é <b>por aqui</b> que a sua admissão acontece de verdade. É rapidinho, uns <b>10 minutinhos</b>.',
-      'Vai ser em 3 partes:<ul class="lista"><li>Seus dados pessoais e endereço</li><li>Dados bancários e uniforme</li><li>Envio dos documentos (pode ser foto pelo celular)</li></ul><span class="obs">Pode parar e voltar quando quiser, dentro do prazo — nada se perde.</span>'
+        ? `Olá, ${primeiroNome()}! Que bom que chegou aqui. Eu sou a Sara, assistente virtual do <b>TATÁ Sushi</b>, e vou te acompanhar no processo de admissão.`
+        : 'Olá! Que bom que chegou aqui. Eu sou a Sara, assistente virtual do <b>TATÁ Sushi</b>, e vou te acompanhar no processo de admissão.',
+      '<b>Como vai funcionar?</b><br>Eu e você vamos conversando por mensagem, aqui mesmo, enquanto vou confirmando algumas informações e pedindo para anexar alguns documentos.<br>Será um processo rápido, no máximo <b>10 minutos</b>.',
+      'Se tiver algum problema, é só tocar no <b>?</b> no canto superior direito, que o pessoal do RH vai falar com você para resolver.<br>Esse link ficará disponível por <b>48 horas</b>.'
     ]},
   { id:'comecar', tipo:'opcoes', grupo:'Boas-vindas', pergunta:'Bora começar?',
     campo:'_inicio', rotulo:'Está pronto(a) para começar?', ocultarRevisao:true,
@@ -1497,6 +1509,32 @@ gateInputs.forEach((inp, idx) => {
 });
 
 $('#gate-recomecar').addEventListener('click', mostrarGate);
+
+/* ── Ajuda (botão ? do topo) ──────────────────────── */
+const RH_WHATS = '5511900000000';        // WhatsApp do RH (placeholder — trocar pelo número real)
+function abrirAjuda(){
+  const app = document.getElementById('app');
+  const scrim = document.createElement('div'); scrim.className = 'scrim-opc';
+  const sheet = document.createElement('div'); sheet.className = 'sheet-opc';
+  const msg = encodeURIComponent(`Olá! Sou ${candidato.nome || 'candidato(a)'} e estou fazendo minha admissão pelo link do Tatá. Preciso de ajuda.`);
+  sheet.innerHTML = `
+    <div class="grab-opc"></div>
+    <div class="sheet-topo"><span class="sheet-titulo">Precisa de ajuda?</span></div>
+    <p class="ajuda-txt">Se travou em algo ou ficou com uma dúvida, o RH do Tatá fala com você para resolver.</p>
+    <div class="opcs">
+      <a class="opc principal" href="https://wa.me/${RH_WHATS}?text=${msg}" target="_blank" rel="noopener">Falar com o RH no WhatsApp</a>
+      <button class="opc" id="ajuda-fechar">Voltar</button>
+    </div>`;
+  app.appendChild(scrim); app.appendChild(sheet);
+  const fechar = () => {
+    sheet.classList.add('saindo'); scrim.classList.add('saindo');
+    setTimeout(() => { sheet.remove(); scrim.remove(); }, 200);
+  };
+  scrim.addEventListener('click', fechar);
+  sheet.querySelector('#ajuda-fechar').addEventListener('click', fechar);
+  sheet.querySelector('.opc.principal').addEventListener('click', () => setTimeout(fechar, 120));
+}
+$('#btn-ajuda').addEventListener('click', abrirAjuda);
 
 /* ── Início ───────────────────────────────────────── */
 if (MODO_REAL){
