@@ -596,7 +596,7 @@ const ROTEIRO = [
       'Só atenção ao prazo, pois esse link ficará disponível por <b>48 horas</b>.'
     ]},
   { id:'comecar', tipo:'opcoes', grupo:'Boas-vindas', pergunta:'Bora começar?!',
-    campo:'_inicio', rotulo:'Está pronto(a) para começar?', ocultarRevisao:true,
+    campo:'_inicio', rotulo:'Está pronto(a) para começar?', ocultarRevisao:true, delayOpcoes:1800,
     opcoes:[{v:'sim', label:'Vamos lá', principal:true}, {v:'duvida', label:'Ainda não. Estou com uma dúvida'}] },
   { id:'duvida', tipo:'fala', grupo:'Boas-vindas',
     condicao:d => d._inicio === 'duvida',
@@ -1132,7 +1132,7 @@ function chipsInline(opcoes, aoEscolher, titulo){
 
 async function comporOpcoes(p){
   /* segura o pop-up alguns instantes: dá tempo de ler a pergunta antes de ele subir */
-  await espera(900);
+  await espera(p.delayOpcoes || 900);
   /* a barra de baixo fica vazia (e some) — as opções vão para o pop-up */
   chipsInline(p.opcoes, async (o) => {
     bolhaUser(o.label);
