@@ -555,7 +555,6 @@ a.opc{ text-decoration:none; display:block; }
   </div>
 
   <div class="gate-rodape">
-    Você recebeu este link do RH do Tatá Sushi.
     <span class="gate-demo">Simulação — digite 1234</span>
   </div>
 </div>
@@ -650,7 +649,8 @@ const ROTEIRO = [
     validar:v => validarCPF(v) || 'Esse CPF não confere. Pode conferir e mandar de novo?' },
 
   { id:'nascimento', tipo:'data', grupo:'Dados pessoais', campo:'nascimento', rotulo:'Data de nascimento',
-    pergunta:'E qual sua <b>data de nascimento</b>?' },
+    pergunta:'E qual sua <b>data de nascimento</b>?', minIdade:16,
+    msgIdade:'Para a admissão é preciso ter mais de 15 anos. Pode conferir a data?' },
 
   { id:'telefone', tipo:'texto', grupo:'Dados pessoais', campo:'telefone', rotulo:'WhatsApp',
     pergunta:() => (candidato.telefone && so(candidato.telefone).length >= 10)
@@ -667,7 +667,7 @@ const ROTEIRO = [
   { id:'email', tipo:'texto', grupo:'Dados pessoais', campo:'email', rotulo:'E-mail',
     pergunta:'Obrigada! Quanto ao seu <b>e-mail</b>, eu ainda não tenho. Pode me passar?',
     placeholder:'voce@email.com', teclado:'email',
-    validar:v => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v.trim()) || 'Esse e-mail não parece certo. Consegue revisar?' },
+    validar:v => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v.trim()) || 'Esse e-mail não parece certo. Consegue revisar?<br>Coloque só o e-mail.' },
 
   { id:'estado_civil', tipo:'opcoes', grupo:'Dados pessoais', campo:'estado_civil', rotulo:'Estado civil',
     pergunta:'Qual o seu <b>estado civil</b>?',
@@ -698,13 +698,9 @@ const ROTEIRO = [
     pergunta:'E o <b>bairro</b>?', placeholder:'Ex.: Butantã',
     validar:v => v.trim().length >= 2 || 'Escreva o bairro.' },
 
-  { id:'cidade', tipo:'texto', grupo:'Endereço', campo:'cidade', rotulo:'Cidade',
-    pergunta:'E qual a sua <b>cidade</b>?', placeholder:'Ex.: São Paulo',
-    validar:v => v.trim().length >= 2 || 'Escreva a cidade.' },
-
-  { id:'estado', tipo:'opcoes', grupo:'Endereço', campo:'estado', rotulo:'Estado (UF)',
-    pergunta:'E o <b>estado</b>?', tituloOpcoes:'Estado', grade:true,
-    opcoes:['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map(uf => ({ v:uf, label:uf })) },
+  { id:'cidade_estado', tipo:'texto', grupo:'Endereço', campo:'cidade_estado', rotulo:'Cidade e estado',
+    pergunta:'E qual a sua <b>cidade e estado</b>?', placeholder:'Ex.: São Paulo/SP',
+    validar:v => v.trim().length >= 3 || 'Escreva a cidade e o estado (ex.: São Paulo/SP).' },
 
   { id:'transporte', tipo:'opcoes', grupo:'Endereço', campo:'vale_transporte', rotulo:'Vale-transporte',
     pergunta:'Você vai precisar de <b>Vale-Transporte</b> para ir e voltar do trabalho?',
@@ -761,7 +757,7 @@ const ROTEIRO = [
     tituloOpcoes:'Conta no Itaú?',
     opcoes:[{v:'sim',label:'Sim, já tenho', principal:true},{v:'nao',label:'Não, vou precisar abrir'}] },
   { id:'banco_abrir', tipo:'fala', grupo:'Dados bancários', condicao:d => d.conta_itau === 'nao', ocultarRevisao:true,
-    falas:[ 'Sem problema! Você pode abrir a conta e, assim que tiver os dados, me manda pelo RH. Seguimos com o resto por aqui.' ] },
+    falas:[ 'Sem problema! Vamos te enviar uma carta para abertura da conta.' ] },
   { id:'tipo_conta', tipo:'opcoes', grupo:'Dados bancários', campo:'tipo_conta', rotulo:'Tipo de conta',
     condicao:d => d.conta_itau === 'sim', tituloOpcoes:'Tipo de conta',
     pergunta:'Qual o tipo da sua conta?',
@@ -778,8 +774,8 @@ const ROTEIRO = [
 
   /* ── Documentos ─────────────────────────────────── */
   { id:'docs_info', tipo:'fala', grupo:'Documentos', falas:[
-      'Obá!!!!<br>Estamos quase lá! Falta só a parte dos <b>documentos</b>. 📎',
-      'Para anexar os documentos, você pode fotografar ou anexar do seu celular. Só cuidado para não cortar a imagem ou deixar com reflexo.<span class="obs">Os tipos de arquivo que aceito são: JPG, PNG ou PDF, até 10 MB.</span>'
+      'Oba!!!!<br>Estamos quase lá! Falta só a parte dos <b>documentos</b>. 📎',
+      'Para anexar os documentos, você pode fotografar ou anexar do seu celular. Só cuidado para não cortar a imagem ou deixar com reflexo.<br>Os tipos de arquivo que aceito são: JPG, PNG ou PDF, até 10 MB.'
     ]},
 
   { id:'doc_identidade', tipo:'upload', grupo:'Documentos', doc:'identidade', rotulo:'RG ou CNH', multiplo:true,
@@ -920,7 +916,10 @@ const elMsgs = $('#msgs'), elComp = $('#composer');
 
 let estado = { i:0, dados:{}, arquivos:{}, retorno:null, protocolo:null };
 let candidato = { nome: '' };   // vem da validação de acesso (na simulação, um nome fixo)
-const primeiroNome = () => (candidato.nome || '').trim().split(/\s+/)[0] || '';
+const primeiroNome = () => {
+  const ns = (typeof estado !== 'undefined' && estado.dados && estado.dados.nome_social) || '';
+  return ((ns || candidato.nome || '').trim().split(/\s+/)[0]) || '';
+};
 
 /* ── Voz da Sara ───────────────────────────────────────
    Cada mensagem tem um play ao lado — a pessoa escolhe o que ouvir.
@@ -1185,6 +1184,19 @@ function comporData(p){
     const [a, m, d] = inp.value.split('-');
     const fmt = `${d}/${m}/${a}`;
     bolhaUser(fmt);
+    /* validação de idade mínima (só onde o passo pede) */
+    if (p.minIdade){
+      const nasc = new Date(+a, +m - 1, +d);
+      const ag = new Date();
+      let idade = ag.getFullYear() - nasc.getFullYear();
+      const md = ag.getMonth() - nasc.getMonth();
+      if (md < 0 || (md === 0 && ag.getDate() < nasc.getDate())) idade--;
+      if (idade < p.minIdade){
+        elComp.innerHTML = '';
+        await falarBot(p.msgIdade || `É preciso ter no mínimo ${p.minIdade} anos. Confere a data?`);
+        return comporData(p);
+      }
+    }
     estado.dados[p.campo] = fmt;
     elComp.innerHTML = '';
     await espera(200);
@@ -1306,10 +1318,10 @@ function chipsInline(opcoes, aoEscolher, titulo, opts){
   /* play que lê as opções em voz alta (pra quem não vai ler os botões) */
   const textoOpcoes = 'Você pode responder: ' + opcoes.map(o => textoParaVoz(o.label)).join('. Ou: ') + '.';
   linha.innerHTML = `
-    ${temVoz ? `<button class="play-msg play-opcoes" aria-label="Ouvir as opções">${ICO_PLAY}</button>` : ''}
     <div class="opcs-inline${opts.grade ? ' grade' : ''}">
       ${opcoes.map((o, k) => `<button class="opc-inline${o.principal ? ' principal' : ''}" data-k="${k}">${o.label}</button>`).join('')}
-    </div>`;
+    </div>
+    ${temVoz ? `<button class="play-msg play-opcoes" aria-label="Ouvir as opções">${ICO_PLAY}</button>` : ''}`;
   elMsgs.appendChild(linha); rolar();
 
   const btnOp = linha.querySelector('.play-opcoes');
