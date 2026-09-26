@@ -1251,7 +1251,7 @@ function comporCidade(p){
 }
 
 function montarPergunta(p){
-  if (p.tipo === 'revisao') return `Prontinho${primeiroNome() ? ', ' + primeiroNome() : ''}! Agora, confira as informações e documentos anexados antes de finalizar. Se tiver algo errado, é só clicar em <b>Editar</b>.`;
+  if (p.tipo === 'revisao') return `Prontinho${primeiroNome() ? ', ' + primeiroNome() : ''}!<br>Agora, confira as informações e documentos anexados antes de finalizar.<br>Se tiver algo errado, é só clicar em <b>Editar</b>.`;
   let h = typeof p.pergunta === 'function' ? p.pergunta() : (p.pergunta || '');
   /* a dica das opções entra na própria fala do bot */
   if (p.dica && p.tipo === 'opcoes') h += `<span class="obs">${p.dica}</span>`;
