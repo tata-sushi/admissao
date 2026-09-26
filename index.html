@@ -585,15 +585,17 @@ a.opc{ text-decoration:none; display:block; }
 const ROTEIRO = [
   /* ── Abertura ───────────────────────────────────── */
   { id:'abertura', tipo:'fala', grupo:'Boas-vindas', falas:[
-      /* A apresentação e os parabéns acontecem lá fora (mensagem do WhatsApp).
-         Aqui dentro a conversa já começa em modo continuidade, pelo nome. */
+      /* Mensagens curtas, uma de cada vez (estilo WhatsApp). */
       () => candidato.nome
-        ? `Olá, ${primeiroNome()}! Que bom que chegou aqui. Eu sou a Sara, assistente virtual do <b>TATÁ Sushi</b>, e vou te acompanhar no processo de admissão.`
-        : 'Olá! Que bom que chegou aqui. Eu sou a Sara, assistente virtual do <b>TATÁ Sushi</b>, e vou te acompanhar no processo de admissão.',
-      '<b>Como vai funcionar?</b><br>Eu e você vamos conversando por mensagem, aqui mesmo, enquanto vou confirmando algumas informações e pedindo para anexar alguns documentos.<br>Será um processo rápido, no máximo <b>10 minutos</b>.',
-      'Se tiver algum problema, é só tocar no <b>?</b> no canto superior direito, que o pessoal do RH vai falar com você para resolver.<br>Esse link ficará disponível por <b>48 horas</b>.'
+        ? `Olá, ${primeiroNome()}! Tudo bem?<br>Parabéns pela admissão!<br>Eu sou a Sara, assistente virtual do <b>TATÁ Sushi</b>, e vou te acompanhar no processo de admissão.`
+        : 'Olá! Tudo bem?<br>Parabéns pela admissão!<br>Eu sou a Sara, assistente virtual do <b>TATÁ Sushi</b>, e vou te acompanhar no processo de admissão.',
+      '<b>Como vai funcionar?</b>',
+      'Eu e você vamos conversando por mensagem, aqui mesmo, enquanto confirmo algumas informações e peço alguns documentos necessários para a admissão.',
+      'Será um processo rápidinho, no máximo <b>10 minutos</b>.',
+      'E se tiver algum problema durante o processo, é só tocar no <b>?</b> no canto superior direito, que o pessoal do RH vai te ajudar.',
+      'Só atenção ao prazo, pois esse link ficará disponível por <b>48 horas</b>.'
     ]},
-  { id:'comecar', tipo:'opcoes', grupo:'Boas-vindas', pergunta:'Bora começar?',
+  { id:'comecar', tipo:'opcoes', grupo:'Boas-vindas', pergunta:'Bora começar?!',
     campo:'_inicio', rotulo:'Está pronto(a) para começar?', ocultarRevisao:true,
     opcoes:[{v:'sim', label:'Vamos lá', principal:true}, {v:'duvida', label:'Ainda não. Estou com uma dúvida'}] },
   { id:'duvida', tipo:'fala', grupo:'Boas-vindas',
@@ -989,7 +991,7 @@ async function falarBot(html, primeira = true){
   p.remove();
   bolhaBot(html, primeira);
   /* pausa de leitura proporcional ao tamanho — evita as falas caírem uma em cima da outra */
-  await espera(Math.min(2200, Math.max(600, texto.length * 28)));
+  await espera(Math.min(1500, Math.max(450, texto.length * 20)));
 }
 
 /* ── Ciclo principal ──────────────────────────────── */
