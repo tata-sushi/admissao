@@ -582,8 +582,8 @@ const ROTEIRO = [
       'Vai ser em 3 partes:<ul class="lista"><li>Seus dados pessoais e endereço</li><li>Dados bancários e uniforme</li><li>Envio dos documentos (pode ser foto pelo celular)</li></ul><span class="obs">Pode parar e voltar quando quiser, dentro do prazo — nada se perde.</span>'
     ]},
   { id:'comecar', tipo:'opcoes', grupo:'Boas-vindas', pergunta:'Bora começar?',
-    campo:'_inicio', rotulo:'Início', ocultarRevisao:true,
-    opcoes:[{v:'sim', label:'Vamos lá 🚀', principal:true}, {v:'duvida', label:'Tenho uma dúvida'}] },
+    campo:'_inicio', rotulo:'Está pronto(a) para começar?', ocultarRevisao:true,
+    opcoes:[{v:'sim', label:'Vamos lá', principal:true}, {v:'duvida', label:'Ainda não. Estou com uma dúvida'}] },
   { id:'duvida', tipo:'fala', grupo:'Boas-vindas',
     condicao:d => d._inicio === 'duvida',
     falas:[
