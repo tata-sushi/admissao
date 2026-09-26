@@ -1533,7 +1533,7 @@ async function concluir(){
   estado.protocolo = 'ADM-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000);
   const primeiro = (estado.dados.nome_social || estado.dados.nome || '').split(' ')[0];
 
-  await falarBot(`Show, ${escapar(primeiro)}! Sua ficha de admissão foi enviada. 🎉<br>Agora, é só aguardar as instruções da área de <b>Gente & Gestão</b>.<br><br>Seja muito bem-vindo(a) ao time do Tatá! 🍣`);
+  await falarBot(`Show, ${escapar(primeiro)}!<br>Sua ficha de admissão foi enviada. 🎉<br>Agora, é só aguardar as instruções da área de <b>Gente & Gestão</b>.<br><br>Seja muito bem-vindo(a) ao time do Tatá! 🍣`);
 
   const cartao = document.createElement('div');
   cartao.className = 'linha de-bot';
