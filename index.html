@@ -587,18 +587,18 @@ const ROTEIRO = [
   /* ── Abertura ───────────────────────────────────── */
   { id:'abertura', tipo:'fala', grupo:'Boas-vindas', falas:[
       /* Mensagens curtas, uma de cada vez (estilo WhatsApp). */
-      () => candidato.nome
+      { fala: () => candidato.nome
         ? `Olá, ${primeiroNome()}! Tudo bem?<br>Parabéns pela sua admissão! 👏🎉`
-        : 'Olá! Tudo bem?<br>Parabéns pela sua admissão! 👏🎉',
-      'Eu sou a Sara, assistente virtual do <b>TATÁ Sushi</b>, e vou te acompanhar no processo de admissão.',
-      'Antes de começar, deixa eu te explicar como vai funcionar!',
-      'Eu e você vamos conversando por mensagem, aqui mesmo, enquanto confirmo algumas informações e peço alguns documentos necessários para a sua admissão.<br><br>Tudo muito simples!!',
-      'E será um processo rapidinho, no máximo <b>10 minutos</b>.',
+        : 'Olá! Tudo bem?<br>Parabéns pela sua admissão! 👏🎉', apos: 1200 },
+      'Eu sou a Sara, assistente virtual do <b>TATÁ Sushi</b>, e vou te acompanhar nesse processo de admissão.',
+      'Antes de começar, deixa eu te explicar como funciona!',
+      'Eu e você vamos conversando por mensagem, aqui mesmo, enquanto confirmo algumas informações e peço os documentos necessários para o seu cadastro.<br><br>Tudo muito simples!!',
+      'E ainda será um processo rapidinho, no máximo <b>10 minutos</b>.',
       'Agora, se tiver algum problema ou dúvida durante o processo, é só tocar no <span class="grifo">?</span> no canto superior direito, que o pessoal do RH vai te ajudar.',
-      'Mas atenção ao prazo, pois esse link ficará disponível por <b>48 horas</b>.'
+      'Só atenção ao prazo, pois esse link ficará disponível por <b>48 horas</b>.'
     ]},
   { id:'comecar', tipo:'opcoes', grupo:'Boas-vindas', pergunta:'Bora começar?!',
-    campo:'_inicio', rotulo:'Está pronto(a) para começar?', ocultarRevisao:true, delayOpcoes:1800,
+    campo:'_inicio', rotulo:'Está pronto(a) para começar?', ocultarRevisao:true, delayOpcoes:2700,
     opcoes:[{v:'sim', label:'Vamos lá', principal:true}, {v:'duvida', label:'Ainda não. Estou com uma dúvida'}] },
   { id:'duvida', tipo:'fala', grupo:'Boas-vindas',
     condicao:d => d._inicio === 'duvida',
@@ -1013,8 +1013,12 @@ async function rodar(){
 
   if (passo.tipo === 'fala'){
     for (let k = 0; k < passo.falas.length; k++){
-      const f = passo.falas[k];
+      let f = passo.falas[k];
+      let apos = 0;
+      /* forma { fala, apos } permite um intervalo extra depois de uma mensagem */
+      if (f && typeof f === 'object' && !(f instanceof Function)){ apos = f.apos || 0; f = f.fala; }
       await falarBot(typeof f === 'function' ? f() : f, k === 0);
+      if (apos) await espera(apos);
     }
     avancar(); return;
   }
