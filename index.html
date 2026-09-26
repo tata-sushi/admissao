@@ -793,10 +793,7 @@ const ROTEIRO = [
     recebido:'Recebido! Agora o PDF da <b>Carteira de Trabalho Digital</b>.<br>Você consegue baixando o app "Carteira de Trabalho Digital" → Contratos → Compartilhar.' },
 
   { id:'doc_ctps', tipo:'upload', grupo:'Documentos', doc:'ctps', rotulo:'Carteira de Trabalho digital',
-    recebido:'Recebido! Chegou a hora da <b>selfie</b>!!!<br>Procure um lugar claro e tire uma selfie, sem boné ou máscara.' },
-
-  { id:'doc_foto', tipo:'upload', grupo:'Documentos', doc:'foto', rotulo:'Selfie', somenteCamera:true,
-    recebido:() => `Recebido! ✅ ${primeiroNome() ? primeiroNome() + ', também' : 'Também'} preciso do seu <b>comprovante de escolaridade</b> (histórico ou certificado).` },
+    recebido:() => `Recebido! ✅ ${primeiroNome() ? primeiroNome() + ', agora' : 'Agora'} o seu <b>comprovante de escolaridade</b> (histórico ou certificado).` },
 
   { id:'doc_escolaridade', tipo:'upload', grupo:'Documentos', doc:'escolaridade_doc', rotulo:'Comprovante de escolaridade',
     recebido:() => estado.dados.tem_dependentes === 'sim'
@@ -807,8 +804,12 @@ const ROTEIRO = [
 
   { id:'doc_banco', tipo:'upload', grupo:'Documentos', doc:'banco_doc', rotulo:'Comprovante bancário',
     condicao:d => d.conta_itau === 'sim',
-    pergunta:'Para finalizar os documentos, preciso de um <b>comprovante da conta</b> mostrando agência, conta e seu nome.',
+    pergunta:'Agora, um <b>comprovante da conta</b> mostrando agência, conta e seu nome.',
     recebido:'Recebido! ✅' },
+
+  { id:'doc_foto', tipo:'upload', grupo:'Documentos', doc:'foto', rotulo:'Selfie', somenteCamera:true,
+    pergunta:'E para finalizar, chegou a hora da <b>selfie</b>!!!<br>Procure um lugar claro e tire uma selfie, sem boné ou máscara.',
+    recebido:'Perfeito! ✅ Selfie recebida — era o último documento.' },
 
   /* ── Fechamento ─────────────────────────────────── */
   { id:'revisao', tipo:'revisao', grupo:'Conferência' },
@@ -854,14 +855,19 @@ const ROTEIRO = [
   const num = v => { const n = parseInt(v, 10); return isNaN(n) ? 0 : n; };
   const ord = n => n + 'ª';
   const MAX = 4;
-  /* provisório — Augusto vai passar a lista oficial (SPTrans, EMTU, etc.) */
   const OPERADORAS = [
-    { v:'sptrans', label:'SPTrans (ônibus SP)' },
-    { v:'metro',   label:'Metrô SP' },
-    { v:'cptm',    label:'CPTM' },
-    { v:'emtu',    label:'EMTU (intermunicipal)' },
-    { v:'viamob',  label:'ViaMobilidade / ViaQuatro' },
-    { v:'outra',   label:'Outra' },
+    { v:'bu_sptrans',   label:'Bilhete Único (SPTrans)' },
+    { v:'top_emtu',     label:'TOP (antigo BOM / EMTU)' },
+    { v:'bem_osasco',   label:'BEM Osasco' },
+    { v:'bem_santana',  label:'BEM Santana de Parnaíba' },
+    { v:'pec_unipec',   label:'PEC / UNIPEC (Carapicuíba)' },
+    { v:'benfacil',     label:'Benfácil (Barueri / Itapevi / Jandira)' },
+    { v:'top_municipal',label:'TOP Municipal (Taboão da Serra / Cotia)' },
+    { v:'embu_card',    label:'Embu Card' },
+    { v:'cartao_legal', label:'Cartão Legal (São Bernardo do Campo)' },
+    { v:'bu_andreense', label:'Bilhete Único Andreense' },
+    { v:'sou_diadema',  label:'SOU (Diadema)' },
+    { v:'outro',        label:'Outro' },
   ];
   const passos = [];
   for (let n = 1; n <= MAX; n++){
