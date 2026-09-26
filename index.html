@@ -614,11 +614,11 @@ const ROTEIRO = [
     ]},
   { id:'comecar', tipo:'opcoes', grupo:'Boas-vindas', pergunta:'Bora começar?!',
     campo:'_inicio', rotulo:'Está pronto(a) para começar?', ocultarRevisao:true, delayOpcoes:5400,
-    opcoes:[{v:'sim', label:'Vamos lá', principal:true}, {v:'duvida', label:'Ainda não. Estou com uma dúvida'}] },
+    opcoes:[{v:'sim', label:'Vamos lá', principal:true}, {v:'duvida', label:'Ainda não. Estou com uma dúvida', wa:true}] },
   { id:'duvida', tipo:'fala', grupo:'Boas-vindas',
     condicao:d => d._inicio === 'duvida',
     falas:[
-      'Claro! Qualquer dúvida sobre contrato, salário ou horário, fale direto com o RH pelo <b>(11) 91362-5960</b>.',
+      'Já abri o <b>WhatsApp do RH</b> pra você tirar sua dúvida! Se não abrir aí, é só chamar no <b>(11) 91362-5960</b>.',
       'Mas os documentos você já pode ir mandando por aqui — assim adiantamos tudo. Vamos nessa!'
     ]},
 
@@ -1379,9 +1379,15 @@ function chipsInline(opcoes, aoEscolher, titulo, opts){
   if (btnOp){ btnOp._falarHtml = textoOpcoes; btnOp.addEventListener('click', () => tocarMensagem(btnOp, textoOpcoes)); }
 
   linha.querySelectorAll('.opc-inline').forEach(b => b.addEventListener('click', () => {
+    const opc = opcoes[+b.dataset.k];
+    /* opção que abre o WhatsApp: dispara no próprio gesto pra não ser bloqueado */
+    if (opc.wa){
+      const txt = encodeURIComponent(`Olá! Sou ${candidato.nome || 'candidato(a)'} e estou fazendo minha admissão pelo link do Tatá. Estou com uma dúvida.`);
+      window.open(`https://wa.me/${RH_WHATS}?text=${txt}`, '_blank', 'noopener');
+    }
     pararVoz();
     linha.remove();                       /* some com as opções ao escolher */
-    aoEscolher(opcoes[+b.dataset.k]);
+    aoEscolher(opc);
   }));
 }
 
