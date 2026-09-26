@@ -609,7 +609,7 @@ const ROTEIRO = [
 
   /* ── Dados pessoais ─────────────────────────────── */
   { id:'nome', tipo:'texto', grupo:'Dados pessoais', campo:'nome', rotulo:'Nome completo',
-    pergunta:() => `Então vamos lá!!!<br>${primeiroNome() ? primeiroNome() + ', você' : 'Você'} pode me confirmar seu <b>nome completo</b>, exatamente como está no seu documento, por favor?`,
+    pergunta:() => `Então, vamos lá!!!<br>${primeiroNome() ? primeiroNome() + ', você' : 'Você'} pode me confirmar seu <b>nome completo</b>, exatamente como está no seu documento, por favor?`,
     valorInicial:() => candidato.nome || '',
     placeholder:'Ex.: Maria Aparecida da Silva',
     validar:v => v.trim().split(/\s+/).length >= 2 || 'Preciso do nome e do sobrenome, tudo bem?' },
@@ -667,8 +667,8 @@ const ROTEIRO = [
     tituloOpcoes:'Você tem filhos ou dependentes menores de 14 anos para fins de salário-família e imposto de renda?',
     opcoes:[{v:'nao',label:'Não tenho'},{v:'sim',label:'Sim, tenho'}] },
   { id:'qtd_dependentes', tipo:'opcoes', grupo:'Dados pessoais', campo:'qtd_dependentes', rotulo:'Qtd. de dependentes',
-    condicao:d => d.tem_dependentes === 'sim',
-    pergunta:'Quantos?', opcoes:[{v:'1',label:'1'},{v:'2',label:'2'},{v:'3',label:'3'},{v:'4+',label:'4 ou mais'}] },
+    condicao:d => d.tem_dependentes === 'sim', tituloOpcoes:'Quantos dependentes?',
+    pergunta:'Quantos?', opcoes:[{v:'1',label:'1'},{v:'2',label:'2'},{v:'3',label:'3'},{v:'4',label:'4'},{v:'5',label:'5'}] },
 
   /* ── Endereço ───────────────────────────────────── */
   { id:'cep', tipo:'texto', grupo:'Endereço', campo:'cep', rotulo:'CEP',
@@ -809,6 +809,35 @@ const ROTEIRO = [
     opcoes:[{v:'sim',label:'Li e concordo ✓', principal:true},{v:'depois',label:'Quero falar com o RH antes'}] },
   { id:'fim', tipo:'fim', grupo:'Conferência' }
 ];
+
+/* Dependentes: gera os passos de cada dependente conforme a quantidade escolhida.
+   Coleta parentesco, nome completo, CPF e data de nascimento de cada um. */
+(function gerarPassosDependentes(){
+  const num = v => { const n = parseInt(v, 10); return isNaN(n) ? 0 : n; };
+  const ord = n => n + 'º';
+  const MAX = 5;
+  const passos = [];
+  for (let n = 1; n <= MAX; n++){
+    const c = d => d.tem_dependentes === 'sim' && num(d.qtd_dependentes) >= n;
+    passos.push(
+      { id:`dep${n}_intro`, tipo:'fala', grupo:'Dependentes', condicao:c, ocultarRevisao:true,
+        falas:[ n === 1 ? 'Boa! Vamos aos dados do <b>1º dependente</b>.' : `Agora o <b>${n}º dependente</b>.` ] },
+      { id:`dep${n}_parentesco`, tipo:'opcoes', grupo:'Dependentes', campo:`dep${n}_parentesco`, rotulo:`Parentesco (${ord(n)} dep.)`, condicao:c,
+        pergunta:`Qual o <b>parentesco</b> do ${ord(n)} dependente?`, tituloOpcoes:'Parentesco',
+        opcoes:[{v:'filho',label:'Filho(a)'},{v:'enteado',label:'Enteado(a)'},{v:'guarda',label:'Menor sob guarda'},{v:'outro',label:'Outro'}] },
+      { id:`dep${n}_nome`, tipo:'texto', grupo:'Dependentes', campo:`dep${n}_nome`, rotulo:`Nome (${ord(n)} dep.)`, condicao:c,
+        pergunta:`<b>Nome completo</b> do ${ord(n)} dependente?`, placeholder:'Nome completo',
+        validar:v => v.trim().split(/\s+/).length >= 2 || 'Preciso do nome e do sobrenome.' },
+      { id:`dep${n}_cpf`, tipo:'texto', grupo:'Dependentes', campo:`dep${n}_cpf`, rotulo:`CPF (${ord(n)} dep.)`, condicao:c,
+        pergunta:`<b>CPF</b> do ${ord(n)} dependente?`, placeholder:'000.000.000-00', mascara:'cpf', teclado:'numeric',
+        validar:v => validarCPF(v) || 'Esse CPF não confere. Pode conferir e mandar de novo?' },
+      { id:`dep${n}_nascimento`, tipo:'texto', grupo:'Dependentes', campo:`dep${n}_nascimento`, rotulo:`Nascimento (${ord(n)} dep.)`, condicao:c,
+        pergunta:`<b>Data de nascimento</b> do ${ord(n)} dependente?`, placeholder:'DD/MM/AAAA', mascara:'data', teclado:'numeric', validar:validarData }
+    );
+  }
+  const i = ROTEIRO.findIndex(s => s.id === 'qtd_dependentes');
+  ROTEIRO.splice(i + 1, 0, ...passos);
+})();
 
 /* ════════════════════════════════════════════════════
    MOTOR DA CONVERSA
