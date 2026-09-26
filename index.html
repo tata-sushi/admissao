@@ -624,7 +624,12 @@ const ROTEIRO = [
     validar:v => v.trim().length >= 2 || 'Escreva pelo menos 2 letras.' },
 
   { id:'cpf', tipo:'texto', grupo:'Dados pessoais', campo:'cpf', rotulo:'CPF',
-    pergunta:'Obrigada! Agora, você pode me informar seu <b>CPF</b>?',
+    pergunta:() => (candidato.cpf && validarCPF(candidato.cpf))
+      ? `Obrigada! Posso confirmar o seu <b>CPF</b>: ${MASCARAS.cpf(candidato.cpf)}?`
+      : 'Obrigada! Agora, você pode me informar seu <b>CPF</b>?',
+    confirmar:{ valor:() => candidato.cpf || '', valido:v => validarCPF(v),
+      titulo:'Confirmar CPF', mostrar:v => MASCARAS.cpf(v),
+      perguntaCorrige:'Sem problema! Pode me informar seu CPF, por favor?' },
     placeholder:'000.000.000-00', mascara:'cpf', teclado:'numeric',
     validar:v => validarCPF(v) || 'Esse CPF não confere. Pode conferir e mandar de novo?' },
 
@@ -633,10 +638,12 @@ const ROTEIRO = [
     mascara:'data', teclado:'numeric', validar:validarData },
 
   { id:'telefone', tipo:'texto', grupo:'Dados pessoais', campo:'telefone', rotulo:'WhatsApp',
-    pergunta:() => candidato.telefone
-      ? `Posso confirmar este número como seu <b>celular e WhatsApp</b>: ${MASCARAS.telefone(candidato.telefone)}?`
+    pergunta:() => (candidato.telefone && so(candidato.telefone).length >= 10)
+      ? `Posso confirmar este número como seu <b>WhatsApp</b>: ${MASCARAS.telefone(candidato.telefone)}?`
       : 'Me passa seu <b>WhatsApp</b> com DDD, por favor?',
-    valorInicial:() => candidato.telefone || '',
+    confirmar:{ valor:() => candidato.telefone || '', valido:v => so(v).length >= 10,
+      titulo:'Confirmar WhatsApp', mostrar:v => MASCARAS.telefone(v),
+      perguntaCorrige:'Sem problema! Pode me passar o número certo, com DDD?' },
     placeholder:'(11) 90000-0000', mascara:'telefone', teclado:'tel',
     validar:v => so(v).length >= 10 || 'Faltou algum número. Confere o DDD?' },
 
@@ -653,7 +660,7 @@ const ROTEIRO = [
 
   { id:'dependentes', tipo:'opcoes', grupo:'Dados pessoais', campo:'tem_dependentes', rotulo:'Tem dependentes',
     pergunta:'Você tem <b>filhos ou dependentes</b> menores de 14 anos para fins de salário-família e imposto de renda?',
-    tituloOpcoes:'Tem dependentes menores de 14 anos?',
+    tituloOpcoes:'Você tem filhos ou dependentes menores de 14 anos para fins de salário-família e imposto de renda?',
     opcoes:[{v:'nao',label:'Não tenho'},{v:'sim',label:'Sim, tenho'}] },
   { id:'qtd_dependentes', tipo:'opcoes', grupo:'Dados pessoais', campo:'qtd_dependentes', rotulo:'Qtd. de dependentes',
     condicao:d => d.tem_dependentes === 'sim',
@@ -1058,6 +1065,34 @@ function avancar(){
 
 /* ── Composer: pergunta aberta ────────────────────── */
 function comporTexto(p){
+  /* confirmação Sim/Não quando já temos o dado da base (CPF, WhatsApp).
+     No "Não", abre o campo para a pessoa digitar o valor certo. */
+  if (p.confirmar && !p._corrigir){
+    const base = p.confirmar.valor();
+    const valido = p.confirmar.valido ? p.confirmar.valido(base) : !!base;
+    if (valido){
+      chipsInline(
+        [{ v:'sim', label:'Sim, é esse', principal:true },
+         { v:'nao', label:p.confirmar.labelNao || 'Não, quero corrigir' }],
+        async (o) => {
+          if (o.v === 'sim'){
+            bolhaUser(p.confirmar.mostrar ? p.confirmar.mostrar(base) : base);
+            estado.dados[p.campo] = base;
+            await espera(200);
+            avancar();
+          } else {
+            bolhaUser('Não, quero corrigir');
+            await espera(200);
+            await falarBot(p.confirmar.perguntaCorrige || 'Sem problema! Pode me escrever o certo?');
+            p._corrigir = true;
+            comporTexto(p);
+          }
+        },
+        p.confirmar.titulo || p.tituloOpcoes || p.rotulo
+      );
+      return;
+    }
+  }
   elComp.innerHTML = `
     ${p.dica ? `<p class="dica">${p.dica}</p>` : ''}
     <div class="campo-linha">
@@ -1479,6 +1514,7 @@ async function validarGate(){
     candidato.cargo = r.cargo || '';
     candidato.unidade = r.unidade || '';
     candidato.telefone = r.contato || '';
+    candidato.cpf = r.cpf || '';
     sucessoGate(r.nome);
     return;
   }
