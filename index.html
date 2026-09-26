@@ -180,6 +180,7 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
   border-bottom-right-radius:7px;
 }
 .bolha b{ font-weight:600; }
+.bolha .grifo{ background:rgba(255,209,10,.55); border-radius:5px; padding:0 5px; font-weight:700; }
 .bolha .lista{ margin:8px 0 0; list-style:none; }
 .bolha .lista li{ position:relative; padding-left:16px; margin-bottom:6px; }
 .bolha .lista li::before{
@@ -587,13 +588,14 @@ const ROTEIRO = [
   { id:'abertura', tipo:'fala', grupo:'Boas-vindas', falas:[
       /* Mensagens curtas, uma de cada vez (estilo WhatsApp). */
       () => candidato.nome
-        ? `Olá, ${primeiroNome()}! Tudo bem?<br>Parabéns pela admissão!<br>Eu sou a Sara, assistente virtual do <b>TATÁ Sushi</b>, e vou te acompanhar no processo de admissão.`
-        : 'Olá! Tudo bem?<br>Parabéns pela admissão!<br>Eu sou a Sara, assistente virtual do <b>TATÁ Sushi</b>, e vou te acompanhar no processo de admissão.',
-      '<b>Como vai funcionar?</b>',
-      'Eu e você vamos conversando por mensagem, aqui mesmo, enquanto confirmo algumas informações e peço alguns documentos necessários para a admissão.',
-      'Será um processo rápidinho, no máximo <b>10 minutos</b>.',
-      'E se tiver algum problema durante o processo, é só tocar no <b>?</b> no canto superior direito, que o pessoal do RH vai te ajudar.',
-      'Só atenção ao prazo, pois esse link ficará disponível por <b>48 horas</b>.'
+        ? `Olá, ${primeiroNome()}! Tudo bem?<br>Parabéns pela sua admissão! 👏🎉`
+        : 'Olá! Tudo bem?<br>Parabéns pela sua admissão! 👏🎉',
+      'Eu sou a Sara, assistente virtual do <b>TATÁ Sushi</b>, e vou te acompanhar no processo de admissão.',
+      'Antes de começar, deixa eu te explicar como vai funcionar!',
+      'Eu e você vamos conversando por mensagem, aqui mesmo, enquanto confirmo algumas informações e peço alguns documentos necessários para a sua admissão.<br><br>Tudo muito simples!!',
+      'E será um processo rapidinho, no máximo <b>10 minutos</b>.',
+      'Agora, se tiver algum problema ou dúvida durante o processo, é só tocar no <span class="grifo">?</span> no canto superior direito, que o pessoal do RH vai te ajudar.',
+      'Mas atenção ao prazo, pois esse link ficará disponível por <b>48 horas</b>.'
     ]},
   { id:'comecar', tipo:'opcoes', grupo:'Boas-vindas', pergunta:'Bora começar?!',
     campo:'_inicio', rotulo:'Está pronto(a) para começar?', ocultarRevisao:true, delayOpcoes:1800,
