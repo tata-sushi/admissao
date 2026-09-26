@@ -141,7 +141,7 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
 .av-bot.oculto{ visibility:hidden; }
 
 /* áudio de cada mensagem (play + velocidade) — centralizado na vertical com a bolha */
-.msg-audio{ flex:0 0 auto; align-self:center; display:flex; align-items:center; gap:6px; }
+.msg-audio{ flex:0 0 auto; align-self:center; margin-left:auto; display:flex; align-items:center; gap:6px; }
 .play-msg{
   flex:0 0 auto; align-self:center; width:30px; height:30px;
   border:none; border-radius:50%; cursor:pointer;
@@ -375,6 +375,9 @@ a.opc{ text-decoration:none; display:block; }
 .opc-inline:hover{ background:rgb(var(--surface-3)); }
 .opc-inline.principal{ background:rgb(var(--accent)); color:rgb(var(--sobre-accent)); border-color:transparent; }
 .opc-inline.principal:hover{ background:rgb(var(--accent-dim)); }
+/* grade de tamanhos: quadrados lado a lado */
+.opcs-inline.grade{ flex-direction:row; flex-wrap:wrap; gap:8px; }
+.opcs-inline.grade .opc-inline{ width:auto; flex:1 1 64px; min-width:64px; padding:16px 8px; }
 .ajuda-txt{ font-size:14px; line-height:1.55; color:rgb(var(--muted)); margin:0 2px 14px; }
 @keyframes scrim-in{ to{ opacity:1; } }
 @keyframes scrim-out{ to{ opacity:0; } }
@@ -637,13 +640,12 @@ const ROTEIRO = [
 
   { id:'cpf', tipo:'texto', grupo:'Dados pessoais', campo:'cpf', rotulo:'CPF',
     pergunta:() => (candidato.cpf && validarCPF(candidato.cpf))
-      ? `Obrigada! Posso confirmar o seu <b>CPF</b>: ${MASCARAS.cpf(candidato.cpf)}?`
+      ? `Obrigada${primeiroNome() ? ', ' + primeiroNome() : ''}! Agora, pode confirmar se esse é o seu <b>CPF</b>: ${MASCARAS.cpf(candidato.cpf)}?`
       : 'Obrigada! Agora, você pode me informar seu <b>CPF</b>?',
     confirmar:{ valor:() => candidato.cpf || '', valido:v => validarCPF(v),
-      titulo:() => `Posso confirmar o CPF ${MASCARAS.cpf(candidato.cpf)}?`,
-      labelSim:'Sim, pode!', labelNao:'Não, quero corrigir',
+      labelSim:'Sim, está correto', labelNao:'Não, preciso corrigir',
       mostrar:v => MASCARAS.cpf(v),
-      perguntaCorrige:'Sem problema! Pode me informar seu CPF, por favor?' },
+      perguntaCorrige:'Sem problema! Qual é a numeração correta?' },
     placeholder:'000.000.000-00', mascara:'cpf', teclado:'numeric',
     validar:v => validarCPF(v) || 'Esse CPF não confere. Pode conferir e mandar de novo?' },
 
@@ -663,9 +665,9 @@ const ROTEIRO = [
     validar:v => so(v).length >= 10 || 'Faltou algum número. Confere o DDD?' },
 
   { id:'email', tipo:'texto', grupo:'Dados pessoais', campo:'email', rotulo:'E-mail',
-    pergunta:'Obrigada! Ainda não tenho seu <b>e-mail</b>. Pode me passar?',
+    pergunta:'Obrigada! Quanto ao seu <b>e-mail</b>, eu ainda não tenho. Pode me passar?',
     placeholder:'voce@email.com', teclado:'email',
-    validar:v => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v.trim()) || 'Esse e-mail não parece certo. Precisa ter <b>@</b> e um domínio, tipo <b>nome@email.com</b>.' },
+    validar:v => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v.trim()) || 'Esse e-mail não parece certo. Consegue revisar?' },
 
   { id:'estado_civil', tipo:'opcoes', grupo:'Dados pessoais', campo:'estado_civil', rotulo:'Estado civil',
     pergunta:'Qual o seu <b>estado civil</b>?',
@@ -683,7 +685,7 @@ const ROTEIRO = [
 
   /* ── Endereço ───────────────────────────────────── */
   { id:'cep', tipo:'texto', grupo:'Endereço', campo:'cep', rotulo:'CEP',
-    pergunta:'Agora, vamos para o seu endereço.<br>Qual o seu <b>CEP</b>?',
+    pergunta:'Obrigada! Agora, vamos para o seu endereço.<br>Qual o <b>CEP</b> da sua residência?',
     placeholder:'00000-000', mascara:'cep', teclado:'numeric',
     validar:v => so(v).length === 8 || 'O CEP tem 8 números.' },
 
@@ -697,52 +699,52 @@ const ROTEIRO = [
     validar:v => v.trim().length >= 2 || 'Escreva o bairro.' },
 
   { id:'cidade', tipo:'texto', grupo:'Endereço', campo:'cidade', rotulo:'Cidade',
-    pergunta:'E a <b>cidade</b>?', placeholder:'Ex.: São Paulo',
+    pergunta:'E qual a sua <b>cidade</b>?', placeholder:'Ex.: São Paulo',
     validar:v => v.trim().length >= 2 || 'Escreva a cidade.' },
+
+  { id:'estado', tipo:'opcoes', grupo:'Endereço', campo:'estado', rotulo:'Estado (UF)',
+    pergunta:'E o <b>estado</b>?', tituloOpcoes:'Estado', grade:true,
+    opcoes:['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map(uf => ({ v:uf, label:uf })) },
 
   { id:'transporte', tipo:'opcoes', grupo:'Endereço', campo:'vale_transporte', rotulo:'Vale-transporte',
     pergunta:'Você vai precisar de <b>Vale-Transporte</b> para ir e voltar do trabalho?',
     opcoes:[{v:'sim',label:'Sim, vou precisar'},{v:'nao',label:'Não, vou por conta própria'}] },
   { id:'conducoes_intro', tipo:'fala', grupo:'Endereço', condicao:d => d.vale_transporte === 'sim', ocultarRevisao:true,
-    falas:[ 'Ok! Vamos detalhar as suas conduções. 🚍',
-            'Conte cada trecho como uma condução — por exemplo, <b>1 ônibus + 1 metrô = 2 conduções</b>.' ] },
+    falas:[ 'Ok! Vamos detalhar as suas conduções. 🚍' ] },
   { id:'qtd_conducoes', tipo:'opcoes', grupo:'Endereço', campo:'qtd_conducoes', rotulo:'Qtd. de conduções',
     condicao:d => d.vale_transporte === 'sim', tituloOpcoes:'Quantas conduções?',
-    pergunta:'Quantas conduções você usa para ir ao trabalho?',
+    pergunta:'Quantas conduções você usa para ir ao trabalho? Conte cada transporte utilizado como uma condução (ex.: 1 ônibus + 1 metrô = 2 conduções).',
     opcoes:[{v:'1',label:'1'},{v:'2',label:'2'},{v:'3',label:'3'},{v:'4',label:'4'}] },
 
   /* ── Trabalho e uniforme ────────────────────────── */
   { id:'escolaridade', tipo:'opcoes', grupo:'Trabalho e uniforme', campo:'escolaridade', rotulo:'Escolaridade',
-    pergunta:'Obrigada. Qual sua <b>escolaridade</b>?',
+    pergunta:'Obrigada.<br>Já preenchemos bastante coisa. Parabéns!!!<br>Agora, vamos para a sua formação. Qual sua <b>escolaridade</b>?',
     opcoes:[{v:'fund_inc',label:'Fundamental incompleto'},{v:'fund',label:'Fundamental completo'},
             {v:'medio_inc',label:'Médio incompleto'},{v:'medio',label:'Médio completo'},
             {v:'sup_inc',label:'Superior incompleto'},{v:'sup',label:'Superior completo'}] },
 
   { id:'camiseta', tipo:'opcoes', grupo:'Trabalho e uniforme', campo:'tam_camiseta', rotulo:'Tamanho da camiseta',
-    pergunta:'Agora, vamos para as informações do seu uniforme.<br>Qual o tamanho da sua <b>camiseta</b>?',
-    tituloOpcoes:'Tamanho da camiseta',
-    dica:'A camiseta é de modelagem tradicional.',
+    pergunta:() => `${primeiroNome() ? primeiroNome() + ', chegou' : 'Chegou'} a hora de preparar o seu uniforme!<br>Qual o tamanho da sua <b>camiseta</b>?`,
+    tituloOpcoes:'Tamanho da camiseta', grade:true,
     opcoes:[{v:'PP',label:'PP'},{v:'P',label:'P'},{v:'M',label:'M'},{v:'G',label:'G'},{v:'GG',label:'GG'},{v:'XG',label:'XG'}] },
 
   { id:'calca', tipo:'opcoes', grupo:'Trabalho e uniforme', campo:'tam_calca', rotulo:'Tamanho da calça',
-    pergunta:'Obrigada. Qual o tamanho da sua <b>calça</b>?',
-    tituloOpcoes:'Tamanho da calça',
+    pergunta:'Qual o tamanho da sua <b>calça</b>?',
+    tituloOpcoes:'Tamanho da calça', grade:true,
     opcoes:[{v:'PP',label:'PP'},{v:'P',label:'P'},{v:'M',label:'M'},{v:'G',label:'G'},{v:'GG',label:'GG'},{v:'XG',label:'XG'}] },
 
   { id:'calcado', tipo:'opcoes', grupo:'Trabalho e uniforme', campo:'calcado', rotulo:'Nº do sapato',
-    pergunta:'Para finalizar, preciso do tamanho do <b>sapato</b>.',
-    dica:'A gente fornece o sapato antiderrapante.',
-    tituloOpcoes:'Tamanho do sapato',
+    pergunta:'E para finalizar, selecione o tamanho do <b>sapato</b>.',
+    tituloOpcoes:'Tamanho do sapato', grade:true,
     opcoes:[{v:'32',label:'32'},{v:'33',label:'33'},{v:'34',label:'34'},{v:'35',label:'35'},{v:'36',label:'36'},{v:'37',label:'37'},{v:'38',label:'38'},{v:'39',label:'39'},{v:'40',label:'40'},{v:'41',label:'41'},{v:'42',label:'42'},{v:'43',label:'43'},{v:'44',label:'44'},{v:'45',label:'45'}] },
 
-  { id:'bibico', tipo:'texto', grupo:'Trabalho e uniforme', campo:'bibico', rotulo:'Bibico', opcional:true,
+  { id:'bibico', tipo:'opcoes', grupo:'Trabalho e uniforme', campo:'bibico', rotulo:'Bibico', grade:true,
     pergunta:'Ops, já estava esquecendo! Caso você use <b>bibico</b>, qual o tamanho?',
-    placeholder:'Ex.: tamanho ou número', textoPular:'Não uso bibico',
-    validar:v => v.trim().length >= 1 || 'Me diz o tamanho, por favor.' },
+    tituloOpcoes:'Tamanho do bibico',
+    opcoes:[{v:'P',label:'P'},{v:'M',label:'M'},{v:'G',label:'G'},{v:'GG',label:'GG'},{v:'nao',label:'Não uso'}] },
 
   { id:'restricao', tipo:'opcoes', grupo:'Trabalho e uniforme', campo:'restricao_saude', rotulo:'Restrição de saúde',
-    pergunta:'Você tem alguma <b>restrição de saúde ou alergia</b> que a gente precise saber?',
-    dica:'Fica só com o RH e com a segurança do trabalho.',
+    pergunta:'Obrigada pelas informações.<br>Agora, um assunto importante. Você tem alguma <b>restrição de saúde ou alergia</b> que a gente precise saber?',
     opcoes:[{v:'nao',label:'Não tenho'},{v:'sim',label:'Sim, tenho'}] },
   { id:'qual_restricao', tipo:'texto', grupo:'Trabalho e uniforme', campo:'restricao_detalhe', rotulo:'Detalhe da restrição',
     condicao:d => d.restricao_saude === 'sim',
@@ -751,79 +753,68 @@ const ROTEIRO = [
 
   /* ── Dados bancários ────────────────────────────── */
   { id:'banco_info', tipo:'fala', grupo:'Dados bancários', falas:[
-      'Agora os <b>dados bancários</b> para o pagamento do salário. 💳',
-      '<span class="obs">A conta precisa estar no seu nome. Não aceitamos conta de terceiros.</span>'
+      () => `Anotado.<br>Chegamos na parte boa${primeiroNome() ? ', ' + primeiroNome() : ''}! 💰`,
+      'Vamos aos <b>dados bancários</b> para o pagamento do salário. 💳'
     ]},
-  { id:'banco', tipo:'texto', grupo:'Dados bancários', campo:'banco', rotulo:'Banco',
-    pergunta:'Qual o seu <b>banco</b>?', placeholder:'Ex.: Nubank, Itaú, Caixa…',
-    validar:v => v.trim().length >= 2 || 'Escreva o nome do banco.' },
+  { id:'banco', tipo:'opcoes', grupo:'Dados bancários', campo:'conta_itau', rotulo:'Conta no Itaú',
+    pergunta:'No TATÁ os pagamentos acontecem pelo banco <b>Itaú</b>, por contas do tipo Corrente ou Salário. Você tem conta salário ou corrente no Itaú?',
+    tituloOpcoes:'Conta no Itaú?',
+    opcoes:[{v:'sim',label:'Sim, já tenho', principal:true},{v:'nao',label:'Não, vou precisar abrir'}] },
+  { id:'banco_abrir', tipo:'fala', grupo:'Dados bancários', condicao:d => d.conta_itau === 'nao', ocultarRevisao:true,
+    falas:[ 'Sem problema! Você pode abrir a conta e, assim que tiver os dados, me manda pelo RH. Seguimos com o resto por aqui.' ] },
   { id:'tipo_conta', tipo:'opcoes', grupo:'Dados bancários', campo:'tipo_conta', rotulo:'Tipo de conta',
-    pergunta:'É conta <b>corrente</b>, <b>poupança</b> ou <b>pagamento/digital</b>?',
-    opcoes:[{v:'corrente',label:'Corrente'},{v:'poupanca',label:'Poupança'},{v:'pagamento',label:'Pagamento / digital'}] },
+    condicao:d => d.conta_itau === 'sim', tituloOpcoes:'Tipo de conta',
+    pergunta:'Qual o tipo da sua conta?',
+    opcoes:[{v:'corrente',label:'Corrente'},{v:'salario',label:'Salário'},{v:'poupanca',label:'Poupança'}] },
   { id:'agencia', tipo:'texto', grupo:'Dados bancários', campo:'agencia', rotulo:'Agência',
-    pergunta:'Número da <b>agência</b> (sem o dígito, se tiver).', placeholder:'Ex.: 0001', teclado:'numeric',
+    condicao:d => d.conta_itau === 'sim',
+    pergunta:'OK! Qual o número da <b>agência</b> (com dígito, se tiver)?', placeholder:'Ex.: 0001', teclado:'numeric',
     validar:v => so(v).length >= 3 || 'A agência tem pelo menos 3 números.' },
   { id:'conta', tipo:'texto', grupo:'Dados bancários', campo:'conta', rotulo:'Conta com dígito',
-    pergunta:'E o número da <b>conta com o dígito</b>.', placeholder:'Ex.: 12345678-9',
+    condicao:d => d.conta_itau === 'sim',
+    pergunta:() => { const t = {corrente:'corrente', salario:'salário', poupanca:'poupança'}[estado.dados.tipo_conta] || ''; return `E o número da <b>conta ${t}</b> (com dígito, se tiver)?`; },
+    placeholder:'Ex.: 12345678-9',
     validar:v => so(v).length >= 4 || 'Confere o número da conta, por favor.' },
-  { id:'pix', tipo:'texto', grupo:'Dados bancários', campo:'pix', rotulo:'Chave PIX',
-    pergunta:'Se tiver uma <b>chave PIX</b> no seu nome, me manda também.',
-    dica:'Ajuda em adiantamentos e reembolsos. Pode pular se preferir.',
-    opcional:true, placeholder:'CPF, telefone, e-mail ou aleatória' },
 
   /* ── Documentos ─────────────────────────────────── */
   { id:'docs_info', tipo:'fala', grupo:'Documentos', falas:[
-      'Estamos quase lá! Falta só a parte dos <b>documentos</b>. 📎',
-      'Pode fotografar com o celular mesmo — só precisa dar para <b>ler tudo</b>, sem corte e sem reflexo.<span class="obs">Aceito JPG, PNG ou PDF, até 10 MB por arquivo.</span>'
+      'Obá!!!!<br>Estamos quase lá! Falta só a parte dos <b>documentos</b>. 📎',
+      'Para anexar os documentos, você pode fotografar ou anexar do seu celular. Só cuidado para não cortar a imagem ou deixar com reflexo.<span class="obs">Os tipos de arquivo que aceito são: JPG, PNG ou PDF, até 10 MB.</span>'
     ]},
 
-  { id:'doc_identidade', tipo:'upload', grupo:'Documentos', doc:'identidade', rotulo:'RG ou CNH',
-    pergunta:'Manda a foto do seu <b>RG (frente e verso)</b> ou da <b>CNH aberta</b>.',
-    dica:'Pode mandar mais de um arquivo de uma vez.', multiplo:true },
+  { id:'doc_identidade', tipo:'upload', grupo:'Documentos', doc:'identidade', rotulo:'RG ou CNH', multiplo:true,
+    pergunta:'Vamos começar com a foto do seu <b>RG (frente e verso)</b>. Pode ser <b>CNH (aberta)</b>.',
+    recebido:'Recebido! Agora, vamos para o <b>CPF</b>. Pode ser a CNH também.' },
 
   { id:'doc_cpf', tipo:'upload', grupo:'Documentos', doc:'cpf_doc', rotulo:'CPF',
-    pergunta:'Agora o <b>CPF</b>. Se o número já aparece no RG/CNH que você mandou, é só pular.',
-    opcional:true },
+    recebido:'Recebido. Hora do <b>comprovante de residência</b> (conta de luz, água, internet…).' },
 
   { id:'doc_residencia', tipo:'upload', grupo:'Documentos', doc:'residencia', rotulo:'Comprovante de residência',
-    pergunta:'<b>Comprovante de residência</b> dos últimos 3 meses (conta de luz, água, internet…).',
-    dica:'Se não estiver no seu nome, mande junto uma declaração simples de quem mora com você.' },
+    recebido:'Recebido! Agora o PDF da <b>Carteira de Trabalho Digital</b>.<br>Você consegue baixando o app "Carteira de Trabalho Digital" → Contratos → Compartilhar.' },
 
   { id:'doc_ctps', tipo:'upload', grupo:'Documentos', doc:'ctps', rotulo:'Carteira de Trabalho digital',
-    pergunta:'O PDF da <b>Carteira de Trabalho Digital</b>.',
-    dica:'Baixe no app "Carteira de Trabalho Digital" → Contratos → Compartilhar.' },
+    recebido:'Recebido! Chegou a hora da <b>selfie</b>!!!<br>Procure um lugar claro e tire uma selfie, sem boné ou máscara.' },
 
-  { id:'doc_foto', tipo:'upload', grupo:'Documentos', doc:'foto', rotulo:'Foto 3x4 ou selfie',
-    pergunta:'Uma <b>foto 3x4</b> ou uma selfie de rosto com fundo claro — é para o seu crachá.' },
+  { id:'doc_foto', tipo:'upload', grupo:'Documentos', doc:'foto', rotulo:'Selfie', somenteCamera:true,
+    recebido:() => `Recebido! ✅ ${primeiroNome() ? primeiroNome() + ', também' : 'Também'} preciso do seu <b>comprovante de escolaridade</b> (histórico ou certificado).` },
 
   { id:'doc_escolaridade', tipo:'upload', grupo:'Documentos', doc:'escolaridade_doc', rotulo:'Comprovante de escolaridade',
-    pergunta:'Se tiver em mãos, o <b>comprovante de escolaridade</b> (histórico ou certificado).',
-    opcional:true },
+    recebido:() => estado.dados.tem_dependentes === 'sim'
+      ? 'Recebido! E como você tem dependentes, preciso da <b>certidão de nascimento</b> e do <b>CPF</b> de cada um.'
+      : 'Recebido! ✅' },
 
-  { id:'doc_dependentes', tipo:'upload', grupo:'Documentos', doc:'dependentes_doc', rotulo:'Certidão dos dependentes',
-    condicao:d => d.tem_dependentes === 'sim',
-    pergunta:'Como você tem dependentes, preciso da <b>certidão de nascimento e do CPF</b> de cada um.',
-    dica:'Também vale a caderneta de vacinação, se for menor de 7 anos.', multiplo:true },
+  /* (os documentos de cada dependente são gerados dinamicamente abaixo) */
 
   { id:'doc_banco', tipo:'upload', grupo:'Documentos', doc:'banco_doc', rotulo:'Comprovante bancário',
-    pergunta:'Por último, um <b>print ou comprovante da conta</b> mostrando agência, conta e seu nome.',
-    opcional:true },
-
-  { id:'aso_info', tipo:'fala', grupo:'Documentos', falas:[
-      'O <b>exame admissional (ASO)</b> é agendado pelo RH — você não precisa se preocupar em marcar.',
-      'Assim que fizer o exame, é só voltar aqui e anexar o resultado.'
-    ]},
-  { id:'doc_aso', tipo:'upload', grupo:'Documentos', doc:'aso', rotulo:'ASO — exame admissional',
-    pergunta:'Já fez o exame? Se sim, anexa o <b>ASO</b> aqui.',
-    dica:'Se ainda não fez, pode pular — a gente te avisa quando estiver agendado.',
-    opcional:true, textoPular:'Ainda não fiz' },
+    condicao:d => d.conta_itau === 'sim',
+    pergunta:'Para finalizar os documentos, preciso de um <b>comprovante da conta</b> mostrando agência, conta e seu nome.',
+    recebido:'Recebido! ✅' },
 
   /* ── Fechamento ─────────────────────────────────── */
   { id:'revisao', tipo:'revisao', grupo:'Conferência' },
   { id:'termo', tipo:'opcoes', grupo:'Conferência', campo:'aceite', rotulo:'Aceite',
     pergunta:'Para finalizar: você confirma que as informações são <b>verdadeiras</b> e autoriza o Tatá Sushi a usá-las para o seu registro trabalhista, conforme a <b>LGPD</b>?',
-    dica:'Seus documentos ficam guardados de forma segura e só o RH tem acesso.',
-    opcoes:[{v:'sim',label:'Li e concordo ✓', principal:true},{v:'depois',label:'Quero falar com o RH antes'}] },
+    opcoes:[{v:'sim',label:'Sim, concordo', principal:true},{v:'depois',label:'Não, preciso falar com o RH antes'}] },
   { id:'fim', tipo:'fim', grupo:'Conferência' }
 ];
 
@@ -881,11 +872,8 @@ const ROTEIRO = [
       { id:`cond${n}_operadora`, tipo:'opcoes', grupo:'Endereço', campo:`cond${n}_operadora`, rotulo:`Operadora (${ord(n)} cond.)`, condicao:c,
         pergunta:`Qual a <b>operadora</b> da ${ord(n)} condução?`, tituloOpcoes:'Operadora',
         opcoes:OPERADORAS },
-      { id:`cond${n}_linha_num`, tipo:'texto', grupo:'Endereço', campo:`cond${n}_linha_num`, rotulo:`Nº da linha (${ord(n)} cond.)`, condicao:c,
-        pergunta:`Qual o <b>número da linha</b>?`, placeholder:'Ex.: 809U ou Linha 4',
-        validar:v => v.trim().length >= 1 || 'Me diz o número da linha.' },
-      { id:`cond${n}_linha_nome`, tipo:'texto', grupo:'Endereço', campo:`cond${n}_linha_nome`, rotulo:`Nome da linha (${ord(n)} cond.)`, condicao:c,
-        pergunta:`E o <b>nome da linha</b>?`, placeholder:'Ex.: Casa Amarela / Butantã–Lapa',
+      { id:`cond${n}_linha`, tipo:'texto', grupo:'Endereço', campo:`cond${n}_linha`, rotulo:`Linha (${ord(n)} cond.)`, condicao:c,
+        pergunta:`Qual o <b>nome da linha</b>?`, placeholder:'Ex.: Butantã–Lapa / Linha 4-Amarela',
         validar:v => v.trim().length >= 2 || 'Me diz o nome da linha.' },
       { id:`cond${n}_valor`, tipo:'texto', grupo:'Endereço', campo:`cond${n}_valor`, rotulo:`Valor (${ord(n)} cond.)`, condicao:c,
         pergunta:`Qual o <b>valor</b> dessa condução?`, placeholder:'Ex.: R$ 4,40', mascara:'dinheiro', teclado:'numeric',
@@ -893,6 +881,25 @@ const ROTEIRO = [
     );
   }
   const i = ROTEIRO.findIndex(s => s.id === 'qtd_conducoes');
+  ROTEIRO.splice(i + 1, 0, ...passos);
+})();
+
+/* Documentos dos dependentes: um upload por dependente (certidão + CPF),
+   conforme a quantidade informada antes. */
+(function gerarDocsDependentes(){
+  const num = v => { const n = parseInt(v, 10); return isNaN(n) ? 0 : n; };
+  const ord = n => n + 'º';
+  const MAX = 5;
+  const passos = [];
+  for (let n = 1; n <= MAX; n++){
+    const c = d => d.tem_dependentes === 'sim' && num(d.qtd_dependentes) >= n;
+    passos.push(
+      { id:`docdep${n}`, tipo:'upload', grupo:'Documentos', doc:`dependente_${n}_doc`, rotulo:`Docs do ${ord(n)} dependente`, multiplo:true, condicao:c,
+        pergunta:`Do <b>${ord(n)} dependente</b>: <b>certidão de nascimento</b> e <b>CPF</b>.`,
+        recebido:'Recebido! ✅' }
+    );
+  }
+  const i = ROTEIRO.findIndex(s => s.id === 'doc_escolaridade');
   ROTEIRO.splice(i + 1, 0, ...passos);
 })();
 
@@ -1140,7 +1147,8 @@ async function rodar(){
 
   if (passo.tipo === 'fim') return concluir();
 
-  await falarBot(montarPergunta(passo));
+  const perg = montarPergunta(passo);
+  if (perg) await falarBot(perg);   /* passos com pergunta vazia (docs encadeados) não falam nada */
 
   if (passo.tipo === 'texto')   return comporTexto(passo);
   if (passo.tipo === 'data')    return comporData(passo);
@@ -1183,12 +1191,10 @@ function comporData(p){
 }
 
 function montarPergunta(p){
-  if (p.tipo === 'revisao') return 'Prontinho! Dá uma conferida em tudo antes de eu enviar para o RH — se algo estiver errado, é só tocar em <b>Editar</b>.';
-  let h = typeof p.pergunta === 'function' ? p.pergunta() : p.pergunta;
-  /* a dica das opções entra na própria fala do bot (as opções agora ficam
-     inline, sem a barra de baixo onde a dica aparecia antes) */
+  if (p.tipo === 'revisao') return `Prontinho! ${primeiroNome() ? primeiroNome() + ', agora' : 'Agora'} dá uma conferida em tudo antes de finalizar. Se tiver algo errado, é só clicar em <b>Editar</b>.`;
+  let h = typeof p.pergunta === 'function' ? p.pergunta() : (p.pergunta || '');
+  /* a dica das opções entra na própria fala do bot */
   if (p.dica && p.tipo === 'opcoes') h += `<span class="obs">${p.dica}</span>`;
-  if (p.opcional && p.tipo === 'upload') h += '<span class="obs">Este é opcional — pode pular e mandar depois.</span>';
   return h;
 }
 
@@ -1265,7 +1271,6 @@ function comporTexto(p){
     estado.dados[p.campo] = null;
     elComp.innerHTML = '';           /* trava para não enviar duas vezes */
     await espera(220);
-    await falarBot('Sem problema, seguimos.');
     avancar();
   });
 
@@ -1288,14 +1293,15 @@ function comporTexto(p){
 }
 
 /* ── Opções: inline, no fluxo da conversa (botões de largura cheia) ─── */
-function chipsInline(opcoes, aoEscolher, titulo){
+function chipsInline(opcoes, aoEscolher, titulo, opts){
+  opts = opts || {};
   const linha = document.createElement('div');
   linha.className = 'linha opcoes-inline';
   /* play que lê as opções em voz alta (pra quem não vai ler os botões) */
   const textoOpcoes = 'Você pode responder: ' + opcoes.map(o => textoParaVoz(o.label)).join('. Ou: ') + '.';
   linha.innerHTML = `
     ${temVoz ? `<button class="play-msg play-opcoes" aria-label="Ouvir as opções">${ICO_PLAY}</button>` : ''}
-    <div class="opcs-inline">
+    <div class="opcs-inline${opts.grade ? ' grade' : ''}">
       ${opcoes.map((o, k) => `<button class="opc-inline${o.principal ? ' principal' : ''}" data-k="${k}">${o.label}</button>`).join('')}
     </div>`;
   elMsgs.appendChild(linha); rolar();
@@ -1324,7 +1330,7 @@ async function comporOpcoes(p){
       return;
     }
     avancar();
-  }, p.tituloOpcoes || p.rotulo);
+  }, p.tituloOpcoes || p.rotulo, { grade: p.grade });
 }
 
 /* ── Composer: upload ─────────────────────────────── */
@@ -1335,10 +1341,10 @@ function comporUpload(p){
     <label class="solta" id="solta">
       <div class="ico">${ICO.camera}</div>
       <div class="txt">
-        <b>Tirar foto ou escolher arquivo</b>
-        <span>JPG, PNG ou PDF &middot; até 10 MB${p.multiplo ? ' &middot; pode selecionar vários' : ''}</span>
+        <b>${p.somenteCamera ? 'Tirar a selfie agora' : 'Tirar foto ou escolher arquivo'}</b>
+        <span>${p.somenteCamera ? 'Use a câmera do celular' : `JPG, PNG ou PDF &middot; até 10 MB${p.multiplo ? ' &middot; pode selecionar vários' : ''}`}</span>
       </div>
-      <input type="file" id="arq" accept="image/*,application/pdf" ${p.multiplo ? 'multiple' : ''}>
+      <input type="file" id="arq" accept="${p.somenteCamera ? 'image/*' : 'image/*,application/pdf'}" ${p.somenteCamera ? 'capture="user"' : ''} ${p.multiplo ? 'multiple' : ''}>
     </label>
     ${p.opcional ? `<div class="chips"><button class="chip leve" id="pular">${p.textoPular || 'Pular por enquanto'}</button></div>` : ''}`;
 
@@ -1380,7 +1386,9 @@ function comporUpload(p){
     estado.arquivos[p.doc] = { pulado:false, rotulo:p.rotulo, itens };
     elComp.innerHTML = '';
     await espera(300);
-    await falarBot(`Recebido! ✅ <b>${p.rotulo}</b> está legível e guardado.`);
+    const msg = typeof p.recebido === 'function' ? p.recebido()
+              : (p.recebido || `Recebido! ✅ <b>${p.rotulo}</b> está guardado.`);
+    if (msg) await falarBot(msg);
     avancar();
   }
 }
@@ -1389,7 +1397,7 @@ const tamanho = b => b < 1024*1024 ? `${Math.max(1, Math.round(b/1024))} KB` : `
 const escapar = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 /* ── Composer: revisão ────────────────────────────── */
-function comporRevisao(){
+async function comporRevisao(){
   const lista = visiveis();
   const campos = lista.filter(p => p.campo && !p.ocultarRevisao && estado.dados[p.campo] != null);
 
@@ -1434,9 +1442,11 @@ function comporRevisao(){
     rodar();
   }));
 
-  elComp.innerHTML = `<div class="chips"><button class="chip principal" id="ok-revisao">Está tudo certo ✓</button></div>`;
+  await espera(300);
+  await falarBot('Está tudo certo? Se estiver, é só confirmar que eu envio para o RH. 😊');
+  elComp.innerHTML = `<div class="chips"><button class="chip principal" id="ok-revisao">Sim, está tudo certo</button></div>`;
   $('#ok-revisao').addEventListener('click', async () => {
-    bolhaUser('Está tudo certo ✓');
+    bolhaUser('Sim, está tudo certo');
     elComp.innerHTML = '';
     await espera(230);
     estado.i++;
@@ -1463,7 +1473,7 @@ async function concluir(){
   estado.protocolo = 'ADM-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000);
   const primeiro = (estado.dados.nome_social || estado.dados.nome || '').split(' ')[0];
 
-  await falarBot(`Show, ${escapar(primeiro)}! Sua ficha de admissão foi enviada para o RH. 🎉`);
+  await falarBot(`Show, ${escapar(primeiro)}! Sua ficha de admissão foi enviada. 🎉<br>Agora, é só aguardar as instruções da área de <b>Gente & Gestão</b> com a data da sua Integração.`);
 
   const cartao = document.createElement('div');
   cartao.className = 'linha de-bot';
@@ -1471,25 +1481,20 @@ async function concluir(){
     <div class="final">
       <div class="ok">${ICO.check}</div>
       <h3>Admissão registrada</h3>
-      <p>O RH vai conferir seus documentos em até <b>2 dias úteis</b> e te chamar no WhatsApp com a data do exame admissional e do primeiro dia.</p>
+      <p>Vamos conferir seus documentos em até <b>2 dias úteis</b> e te chamar no WhatsApp com a data do exame admissional e integração.</p>
       <div class="protocolo"><small>PROTOCOLO</small>${estado.protocolo}</div>
     </div>`;
   elMsgs.appendChild(cartao); rolar();
   await espera(500);
 
   if (pendentes.length){
-    await falarBot(`Ficou pendente: <ul class="lista">${pendentes.map(d => `<li>${d}</li>`).join('')}</ul>
-      <span class="obs">Assim que tiver em mãos, é só voltar aqui e anexar.</span>`, false);
-  } else {
-    await falarBot('Todos os documentos foram entregues, nada pendente. 👏', false);
+    await falarBot(`Ficou pendente: <ul class="lista">${pendentes.map(d => `<li>${d}</li>`).join('')}</ul>`, false);
   }
   await falarBot('Seja muito bem-vindo(a) ao time Tatá! 🍣', false);
 
   elComp.innerHTML = `<div class="chips">
-      <button class="chip" id="ver-dados">Ver meus dados</button>
       <button class="chip leve" id="recomecar">Recomeçar simulação</button>
     </div>`;
-  $('#ver-dados').addEventListener('click', abrirModal);
   $('#recomecar').addEventListener('click', reiniciar);
   atualizarProgresso(null, true);
 }
