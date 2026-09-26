@@ -1440,7 +1440,6 @@ async function comporOpcoes(p){
 
 /* ── Composer: upload ─────────────────────────────── */
 function comporUpload(p){
-  const subUpload = p.somenteCamera ? 'Use a câmera do celular' : '';
   elComp.innerHTML = `
     ${p.dica ? `<p class="dica">${p.dica}</p>` : ''}
     <div id="erro-arq"></div>
@@ -1448,7 +1447,6 @@ function comporUpload(p){
       <div class="ico">${ICO.camera}</div>
       <div class="txt">
         <b>${p.somenteCamera ? 'Tirar a selfie agora' : 'Tirar foto ou escolher arquivo'}</b>
-        ${subUpload ? `<span>${subUpload}</span>` : ''}
       </div>
       <input type="file" id="arq" accept="${p.somenteCamera ? 'image/*' : 'image/*,application/pdf'}" ${p.somenteCamera ? 'capture="user"' : ''} ${p.multiplo ? 'multiple' : ''}>
     </label>
