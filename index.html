@@ -534,7 +534,7 @@ a.opc{ text-decoration:none; display:block; }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>
     </div>
     <h1>Acesso bloqueado</h1>
-    <p class="gate-sub">Muitas tentativas seguidas. Fale com o RH do Tatá pelo <b>(11) 90000-0000</b> para liberar o acesso de novo.</p>
+    <p class="gate-sub">Muitas tentativas seguidas. Fale com o RH do Tatá pelo <b>(11) 91362-5960</b> para liberar o acesso de novo.</p>
     <button class="chip leve" id="gate-recomecar" style="margin-top:14px">Recomeçar simulação</button>
   </div>
 
@@ -599,7 +599,7 @@ const ROTEIRO = [
   { id:'duvida', tipo:'fala', grupo:'Boas-vindas',
     condicao:d => d._inicio === 'duvida',
     falas:[
-      'Claro! Qualquer dúvida sobre contrato, salário ou horário, fale direto com o RH pelo <b>(11) 90000-0000</b>.',
+      'Claro! Qualquer dúvida sobre contrato, salário ou horário, fale direto com o RH pelo <b>(11) 91362-5960</b>.',
       'Mas os documentos você já pode ir mandando por aqui — assim adiantamos tudo. Vamos nessa!'
     ]},
 
@@ -1432,7 +1432,7 @@ async function validarGate(){
     tentativasGate++;
     tremerPin();
     if (tentativasGate >= MAX_TENTATIVAS){
-      gateEncerrado('Acesso bloqueado', 'Muitas tentativas seguidas. Fale com o RH do Tatá pelo <b>(11) 90000-0000</b> para liberar o acesso de novo.');
+      gateEncerrado('Acesso bloqueado', 'Muitas tentativas seguidas. Fale com o RH do Tatá pelo <b>(11) 91362-5960</b> para liberar o acesso de novo.');
     } else {
       const restam = MAX_TENTATIVAS - tentativasGate;
       gateMsg.textContent = `CPF não confere. ${restam} ${restam === 1 ? 'tentativa restante' : 'tentativas restantes'}.`;
@@ -1511,7 +1511,7 @@ gateInputs.forEach((inp, idx) => {
 $('#gate-recomecar').addEventListener('click', mostrarGate);
 
 /* ── Ajuda (botão ? do topo) ──────────────────────── */
-const RH_WHATS = '5511900000000';        // WhatsApp do RH (placeholder — trocar pelo número real)
+const RH_WHATS = '5511913625960';        // WhatsApp do RH
 function abrirAjuda(){
   const app = document.getElementById('app');
   const scrim = document.createElement('div'); scrim.className = 'scrim-opc';
