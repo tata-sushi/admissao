@@ -324,11 +324,38 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
 .chip.leve{ background:transparent; color:rgb(var(--muted)); }
 .chip.leve:hover{ background:var(--fill); color:rgb(var(--text)); }
 
-/* opções dentro do fluxo da conversa (não na barra de baixo) */
-.opcoes-inline{ margin-top:2px; margin-bottom:14px; }
-/* pilha vertical de botões da mesma largura, alinhada à direita */
-.opcoes-inline .chips{ flex-direction:column; align-items:stretch; gap:8px; width:min(80%,320px); }
-.opcoes-inline .chip{ width:100%; text-align:center; padding:13px 18px; }
+/* opções em pop-up (bottom sheet) — todas as escolhas passam por aqui */
+.scrim-opc{ position:absolute; inset:0; z-index:40; background:rgba(20,20,20,.42);
+  opacity:0; animation:scrim-in .2s ease forwards; }
+.scrim-opc.saindo{ animation:scrim-out .2s ease forwards; }
+.sheet-opc{ position:absolute; left:0; right:0; bottom:0; z-index:41;
+  background:rgb(var(--surface)); border-top-left-radius:24px; border-top-right-radius:24px;
+  padding:10px 18px calc(20px + env(safe-area-inset-bottom));
+  box-shadow:0 -12px 40px rgba(0,0,0,.16); max-height:82%; overflow-y:auto;
+  transform:translateY(100%); animation:sheet-in .28s cubic-bezier(.22,.61,.36,1) forwards; }
+.sheet-opc.saindo{ animation:sheet-out .2s ease forwards; }
+.grab-opc{ width:40px; height:5px; border-radius:999px; background:rgb(var(--surface-3)); margin:6px auto 14px; }
+.sheet-topo{ display:flex; align-items:center; gap:10px; margin:0 2px 14px; }
+.sheet-titulo{ font-size:13px; font-weight:500; letter-spacing:.01em; color:rgb(var(--muted)); }
+.sheet-play{ margin-left:auto; flex:0 0 auto; width:34px; height:34px; border:none; border-radius:50%;
+  background:var(--accent-soft); color:rgb(var(--accent-dim)); display:grid; place-items:center; cursor:pointer;
+  transition:transform .12s, background .15s, color .15s; }
+.sheet-play:active{ transform:scale(.9); }
+.sheet-play svg{ width:14px; height:14px; }
+.sheet-play.tocando{ background:rgb(var(--accent)); color:rgb(var(--sobre-accent)); }
+.opcs{ display:flex; flex-direction:column; gap:9px; }
+.opc{ width:100%; text-align:left; font-family:Inter,sans-serif; font-size:15px; font-weight:600;
+  padding:15px 18px; border-radius:14px; border:1px solid var(--line);
+  background:rgb(var(--surface-2)); color:rgb(var(--text)); cursor:pointer;
+  transition:transform .12s, background .15s; }
+.opc:active{ transform:scale(.99); }
+.opc:hover{ background:rgb(var(--surface-3)); }
+.opc.principal{ background:rgb(var(--accent)); color:rgb(var(--sobre-accent)); border-color:transparent; text-align:center; }
+.opc.principal:hover{ background:rgb(var(--accent-dim)); }
+@keyframes scrim-in{ to{ opacity:1; } }
+@keyframes scrim-out{ to{ opacity:0; } }
+@keyframes sheet-in{ to{ transform:translateY(0); } }
+@keyframes sheet-out{ to{ transform:translateY(100%); } }
 
 /* upload — padrão .icon-tile do app */
 .solta{
@@ -441,6 +468,8 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
   .linha,.pontos i,.gate,.gate.saindo,.pin.tremer{ animation:none; }
   .msgs{ scroll-behavior:auto; }
   .tap:active,.chip:active,.solta:active,.enviar:active{ transform:none; }
+  .sheet-opc{ transform:none; animation:none; }
+  .scrim-opc{ opacity:1; animation:none; }
 }
 </style>
 </head>
@@ -1053,28 +1082,40 @@ function comporTexto(p){
 }
 
 /* ── Opções: renderizadas INLINE, no fluxo da conversa ─── */
-function chipsInline(opcoes, aoEscolher){
-  const linha = document.createElement('div');
-  linha.className = 'linha de-user opcoes-inline';
+function chipsInline(opcoes, aoEscolher, titulo){
+  /* todas as escolhas viram um pop-up (bottom sheet) que sobe de baixo */
+  const app = document.getElementById('app');
+  const scrim = document.createElement('div'); scrim.className = 'scrim-opc';
+  const sheet = document.createElement('div'); sheet.className = 'sheet-opc';
   /* play que lê as opções em voz alta (pra quem não vai ler os botões) */
   const textoOpcoes = 'Você pode responder: ' + opcoes.map(o => textoParaVoz(o.label)).join('. Ou: ') + '.';
-  linha.innerHTML = `
-    ${temVoz ? `<button class="play-msg play-opcoes" aria-label="Ouvir as opções">${ICO_PLAY}</button>` : ''}
-    <div class="chips">
-      ${opcoes.map((o, k) => `<button class="chip${o.principal ? ' principal' : ''}" data-k="${k}">${o.label}</button>`).join('')}
+  sheet.innerHTML = `
+    <div class="grab-opc"></div>
+    <div class="sheet-topo">
+      <span class="sheet-titulo">${titulo || 'Toque na sua resposta'}</span>
+      ${temVoz ? `<button class="sheet-play" aria-label="Ouvir as opções">${ICO_PLAY}</button>` : ''}
+    </div>
+    <div class="opcs">
+      ${opcoes.map((o, k) => `<button class="opc${o.principal ? ' principal' : ''}" data-k="${k}">${o.label}</button>`).join('')}
     </div>`;
-  elMsgs.appendChild(linha); rolar();
-  const btnOp = linha.querySelector('.play-opcoes');
+  app.appendChild(scrim); app.appendChild(sheet);
+
+  const btnOp = sheet.querySelector('.sheet-play');
   if (btnOp){ btnOp._falarHtml = textoOpcoes; btnOp.addEventListener('click', () => tocarMensagem(btnOp, textoOpcoes)); }
-  linha.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => {
+
+  const fechar = (cb) => {
     pararVoz();
-    linha.remove();                       /* some com as opções ao escolher */
-    aoEscolher(opcoes[+b.dataset.k]);
+    sheet.classList.add('saindo'); scrim.classList.add('saindo');
+    setTimeout(() => { sheet.remove(); scrim.remove(); cb && cb(); }, 200);
+  };
+  sheet.querySelectorAll('.opc').forEach(b => b.addEventListener('click', () => {
+    fechar(() => aoEscolher(opcoes[+b.dataset.k]));
   }));
+  /* obrigatório: não fecha tocando por fora — só escolhendo uma opção */
 }
 
 function comporOpcoes(p){
-  /* a barra de baixo fica vazia (e some) — as opções vão para o fluxo */
+  /* a barra de baixo fica vazia (e some) — as opções vão para o pop-up */
   chipsInline(p.opcoes, async (o) => {
     bolhaUser(o.label);
     estado.dados[p.campo] = o.v;
@@ -1086,7 +1127,7 @@ function comporOpcoes(p){
       return;
     }
     avancar();
-  });
+  }, p.rotulo);
 }
 
 /* ── Composer: upload ─────────────────────────────── */
