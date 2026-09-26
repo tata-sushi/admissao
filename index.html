@@ -363,6 +363,18 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
 .opc.principal{ background:rgb(var(--accent)); color:rgb(var(--sobre-accent)); border-color:transparent; text-align:center; }
 .opc.principal:hover{ background:rgb(var(--accent-dim)); }
 a.opc{ text-decoration:none; display:block; }
+
+/* opções inline no fluxo da conversa (botões de largura cheia) */
+.opcoes-inline{ display:flex; align-items:center; gap:8px; margin:2px 0 14px; }
+.opcoes-inline .opcs-inline{ flex:1; min-width:0; display:flex; flex-direction:column; gap:8px; }
+.opc-inline{ width:100%; text-align:center; font-family:Inter,sans-serif; font-size:15px; font-weight:600;
+  padding:15px 18px; border-radius:14px; border:1px solid var(--line);
+  background:rgb(var(--surface-2)); color:rgb(var(--text)); cursor:pointer;
+  transition:transform .12s ease, background .15s; }
+.opc-inline:active{ transform:scale(.99); }
+.opc-inline:hover{ background:rgb(var(--surface-3)); }
+.opc-inline.principal{ background:rgb(var(--accent)); color:rgb(var(--sobre-accent)); border-color:transparent; }
+.opc-inline.principal:hover{ background:rgb(var(--accent-dim)); }
 .ajuda-txt{ font-size:14px; line-height:1.55; color:rgb(var(--muted)); margin:0 2px 14px; }
 @keyframes scrim-in{ to{ opacity:1; } }
 @keyframes scrim-out{ to{ opacity:0; } }
@@ -680,18 +692,24 @@ const ROTEIRO = [
     placeholder:'Ex.: Rua das Flores, 123, apto 42',
     validar:v => v.trim().length >= 6 || 'Preciso da rua e do número.' },
 
-  { id:'bairro_cidade', tipo:'texto', grupo:'Endereço', campo:'bairro_cidade', rotulo:'Bairro e cidade',
-    pergunta:'E o <b>bairro e a cidade</b>?', placeholder:'Ex.: Pinheiros, São Paulo',
-    validar:v => v.trim().length >= 4 || 'Escreva o bairro e a cidade.' },
+  { id:'bairro', tipo:'texto', grupo:'Endereço', campo:'bairro', rotulo:'Bairro',
+    pergunta:'E o <b>bairro</b>?', placeholder:'Ex.: Butantã',
+    validar:v => v.trim().length >= 2 || 'Escreva o bairro.' },
+
+  { id:'cidade', tipo:'texto', grupo:'Endereço', campo:'cidade', rotulo:'Cidade',
+    pergunta:'E a <b>cidade</b>?', placeholder:'Ex.: São Paulo',
+    validar:v => v.trim().length >= 2 || 'Escreva a cidade.' },
 
   { id:'transporte', tipo:'opcoes', grupo:'Endereço', campo:'vale_transporte', rotulo:'Vale-transporte',
     pergunta:'Você vai precisar de <b>Vale-Transporte</b> para ir e voltar do trabalho?',
     opcoes:[{v:'sim',label:'Sim, vou precisar'},{v:'nao',label:'Não, vou por conta própria'}] },
-  { id:'linhas', tipo:'texto', grupo:'Endereço', campo:'linhas', rotulo:'Linhas / condução',
-    condicao:d => d.vale_transporte === 'sim',
-    pergunta:'Ok! Aqui, preciso que você me fale <b>quantas conduções</b> você utilizará, quais são as <b>linhas</b> e qual o <b>valor</b> de cada uma delas. Tudo bem?',
-    placeholder:'Ex.: 2 conduções — Metrô Linha 4 (R$ 5,00) + ônibus 809U (R$ 4,40)',
-    validar:v => v.trim().length >= 3 || 'Me conta pelo menos uma linha.' },
+  { id:'conducoes_intro', tipo:'fala', grupo:'Endereço', condicao:d => d.vale_transporte === 'sim', ocultarRevisao:true,
+    falas:[ 'Ok! Vamos detalhar as suas conduções. 🚍',
+            'Conte cada trecho como uma condução — por exemplo, <b>1 ônibus + 1 metrô = 2 conduções</b>.' ] },
+  { id:'qtd_conducoes', tipo:'opcoes', grupo:'Endereço', campo:'qtd_conducoes', rotulo:'Qtd. de conduções',
+    condicao:d => d.vale_transporte === 'sim', tituloOpcoes:'Quantas conduções?',
+    pergunta:'Quantas conduções você usa para ir ao trabalho?',
+    opcoes:[{v:'1',label:'1'},{v:'2',label:'2'},{v:'3',label:'3'},{v:'4',label:'4'}] },
 
   /* ── Trabalho e uniforme ────────────────────────── */
   { id:'escolaridade', tipo:'opcoes', grupo:'Trabalho e uniforme', campo:'escolaridade', rotulo:'Escolaridade',
@@ -838,6 +856,46 @@ const ROTEIRO = [
   ROTEIRO.splice(i + 1, 0, ...passos);
 })();
 
+/* Conduções (vale-transporte): gera os passos de cada condução conforme a
+   quantidade escolhida. Coleta operadora, número e nome da linha e valor.
+   OBS: a lista de operadoras é provisória — trocar pela lista oficial. */
+(function gerarPassosConducoes(){
+  const num = v => { const n = parseInt(v, 10); return isNaN(n) ? 0 : n; };
+  const ord = n => n + 'ª';
+  const MAX = 4;
+  /* provisório — Augusto vai passar a lista oficial (SPTrans, EMTU, etc.) */
+  const OPERADORAS = [
+    { v:'sptrans', label:'SPTrans (ônibus SP)' },
+    { v:'metro',   label:'Metrô SP' },
+    { v:'cptm',    label:'CPTM' },
+    { v:'emtu',    label:'EMTU (intermunicipal)' },
+    { v:'viamob',  label:'ViaMobilidade / ViaQuatro' },
+    { v:'outra',   label:'Outra' },
+  ];
+  const passos = [];
+  for (let n = 1; n <= MAX; n++){
+    const c = d => d.vale_transporte === 'sim' && num(d.qtd_conducoes) >= n;
+    passos.push(
+      { id:`cond${n}_intro`, tipo:'fala', grupo:'Endereço', condicao:c, ocultarRevisao:true,
+        falas:[ n === 1 ? 'Vamos à <b>1ª condução</b>.' : `Agora a <b>${n}ª condução</b>.` ] },
+      { id:`cond${n}_operadora`, tipo:'opcoes', grupo:'Endereço', campo:`cond${n}_operadora`, rotulo:`Operadora (${ord(n)} cond.)`, condicao:c,
+        pergunta:`Qual a <b>operadora</b> da ${ord(n)} condução?`, tituloOpcoes:'Operadora',
+        opcoes:OPERADORAS },
+      { id:`cond${n}_linha_num`, tipo:'texto', grupo:'Endereço', campo:`cond${n}_linha_num`, rotulo:`Nº da linha (${ord(n)} cond.)`, condicao:c,
+        pergunta:`Qual o <b>número da linha</b>?`, placeholder:'Ex.: 809U ou Linha 4',
+        validar:v => v.trim().length >= 1 || 'Me diz o número da linha.' },
+      { id:`cond${n}_linha_nome`, tipo:'texto', grupo:'Endereço', campo:`cond${n}_linha_nome`, rotulo:`Nome da linha (${ord(n)} cond.)`, condicao:c,
+        pergunta:`E o <b>nome da linha</b>?`, placeholder:'Ex.: Casa Amarela / Butantã–Lapa',
+        validar:v => v.trim().length >= 2 || 'Me diz o nome da linha.' },
+      { id:`cond${n}_valor`, tipo:'texto', grupo:'Endereço', campo:`cond${n}_valor`, rotulo:`Valor (${ord(n)} cond.)`, condicao:c,
+        pergunta:`Qual o <b>valor</b> dessa condução?`, placeholder:'Ex.: R$ 4,40', mascara:'dinheiro', teclado:'numeric',
+        validar:v => so(v).length >= 1 || 'Me diz o valor da passagem.' }
+    );
+  }
+  const i = ROTEIRO.findIndex(s => s.id === 'qtd_conducoes');
+  ROTEIRO.splice(i + 1, 0, ...passos);
+})();
+
 /* ════════════════════════════════════════════════════
    MOTOR DA CONVERSA
    ════════════════════════════════════════════════════ */
@@ -942,6 +1000,12 @@ const MASCARAS = {
     return n.length <= 10
       ? n.replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{4})(\d)/, '$1-$2')
       : n.replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2');
+  },
+  dinheiro: v => {
+    const n = so(v).slice(0,8);
+    if (!n) return '';
+    const val = (parseInt(n, 10) / 100).toFixed(2);
+    return 'R$ ' + val.replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   }
 };
 
@@ -999,15 +1063,12 @@ function bolhaBot(html, primeira = true){
   l.className = 'linha de-bot';
   const audio = temVoz ? `<div class="msg-audio">
       <button class="play-msg" aria-label="Ouvir esta mensagem">${ICO_PLAY}</button>
-      <button class="vel-msg" aria-label="Velocidade da voz">${rotuloVel()}</button>
     </div>` : '';
   l.innerHTML = `<div class="av-bot${primeira ? '' : ' oculto'}">${avatarSara()}</div>
                  <div class="bolha">${html}</div>${audio}`;
   elMsgs.appendChild(l); rolar();
   const btnP = l.querySelector('.play-msg');
   if (btnP){ btnP._falarHtml = html; btnP.addEventListener('click', () => tocarMensagem(btnP, html)); }
-  const btnV = l.querySelector('.vel-msg');
-  if (btnV) btnV.addEventListener('click', ciclarVel);
   return l;
 }
 function bolhaUser(html){
@@ -1226,43 +1287,32 @@ function comporTexto(p){
   }
 }
 
-/* ── Opções: renderizadas INLINE, no fluxo da conversa ─── */
+/* ── Opções: inline, no fluxo da conversa (botões de largura cheia) ─── */
 function chipsInline(opcoes, aoEscolher, titulo){
-  /* todas as escolhas viram um pop-up (bottom sheet) que sobe de baixo */
-  const app = document.getElementById('app');
-  const scrim = document.createElement('div'); scrim.className = 'scrim-opc';
-  const sheet = document.createElement('div'); sheet.className = 'sheet-opc';
+  const linha = document.createElement('div');
+  linha.className = 'linha opcoes-inline';
   /* play que lê as opções em voz alta (pra quem não vai ler os botões) */
   const textoOpcoes = 'Você pode responder: ' + opcoes.map(o => textoParaVoz(o.label)).join('. Ou: ') + '.';
-  sheet.innerHTML = `
-    <div class="grab-opc"></div>
-    <div class="sheet-topo">
-      <span class="sheet-titulo">${titulo || 'Toque na sua resposta'}</span>
-      ${temVoz ? `<button class="sheet-play" aria-label="Ouvir as opções">${ICO_PLAY}</button>` : ''}
-    </div>
-    <div class="opcs">
-      ${opcoes.map((o, k) => `<button class="opc${o.principal ? ' principal' : ''}" data-k="${k}">${o.label}</button>`).join('')}
+  linha.innerHTML = `
+    ${temVoz ? `<button class="play-msg play-opcoes" aria-label="Ouvir as opções">${ICO_PLAY}</button>` : ''}
+    <div class="opcs-inline">
+      ${opcoes.map((o, k) => `<button class="opc-inline${o.principal ? ' principal' : ''}" data-k="${k}">${o.label}</button>`).join('')}
     </div>`;
-  app.appendChild(scrim); app.appendChild(sheet);
+  elMsgs.appendChild(linha); rolar();
 
-  const btnOp = sheet.querySelector('.sheet-play');
+  const btnOp = linha.querySelector('.play-opcoes');
   if (btnOp){ btnOp._falarHtml = textoOpcoes; btnOp.addEventListener('click', () => tocarMensagem(btnOp, textoOpcoes)); }
 
-  const fechar = (cb) => {
+  linha.querySelectorAll('.opc-inline').forEach(b => b.addEventListener('click', () => {
     pararVoz();
-    sheet.classList.add('saindo'); scrim.classList.add('saindo');
-    setTimeout(() => { sheet.remove(); scrim.remove(); cb && cb(); }, 200);
-  };
-  sheet.querySelectorAll('.opc').forEach(b => b.addEventListener('click', () => {
-    fechar(() => aoEscolher(opcoes[+b.dataset.k]));
+    linha.remove();                       /* some com as opções ao escolher */
+    aoEscolher(opcoes[+b.dataset.k]);
   }));
-  /* obrigatório: não fecha tocando por fora — só escolhendo uma opção */
 }
 
 async function comporOpcoes(p){
-  /* segura o pop-up alguns instantes: dá tempo de ler a pergunta antes de ele subir */
+  /* segura um instante: dá tempo de ler a pergunta antes das opções aparecerem */
   await espera(p.delayOpcoes || 900);
-  /* a barra de baixo fica vazia (e some) — as opções vão para o pop-up */
   chipsInline(p.opcoes, async (o) => {
     bolhaUser(o.label);
     estado.dados[p.campo] = o.v;
