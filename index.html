@@ -635,9 +635,8 @@ const ROTEIRO = [
     placeholder:'000.000.000-00', mascara:'cpf', teclado:'numeric',
     validar:v => validarCPF(v) || 'Esse CPF não confere. Pode conferir e mandar de novo?' },
 
-  { id:'nascimento', tipo:'texto', grupo:'Dados pessoais', campo:'nascimento', rotulo:'Data de nascimento',
-    pergunta:'E qual sua <b>data de nascimento</b>?', placeholder:'DD/MM/AAAA',
-    mascara:'data', teclado:'numeric', validar:validarData },
+  { id:'nascimento', tipo:'data', grupo:'Dados pessoais', campo:'nascimento', rotulo:'Data de nascimento',
+    pergunta:'E qual sua <b>data de nascimento</b>?' },
 
   { id:'telefone', tipo:'texto', grupo:'Dados pessoais', campo:'telefone', rotulo:'WhatsApp',
     pergunta:() => (candidato.telefone && so(candidato.telefone).length >= 10)
@@ -654,7 +653,7 @@ const ROTEIRO = [
   { id:'email', tipo:'texto', grupo:'Dados pessoais', campo:'email', rotulo:'E-mail',
     pergunta:'Obrigada! Ainda não tenho seu <b>e-mail</b>. Pode me passar?',
     placeholder:'voce@email.com', teclado:'email',
-    validar:v => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v.trim()) || 'Esse e-mail parece incompleto.' },
+    validar:v => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v.trim()) || 'Esse e-mail não parece certo. Precisa ter <b>@</b> e um domínio, tipo <b>nome@email.com</b>.' },
 
   { id:'estado_civil', tipo:'opcoes', grupo:'Dados pessoais', campo:'estado_civil', rotulo:'Estado civil',
     pergunta:'Qual o seu <b>estado civil</b>?',
@@ -831,8 +830,8 @@ const ROTEIRO = [
       { id:`dep${n}_cpf`, tipo:'texto', grupo:'Dependentes', campo:`dep${n}_cpf`, rotulo:`CPF (${ord(n)} dep.)`, condicao:c,
         pergunta:`<b>CPF</b> do ${ord(n)} dependente?`, placeholder:'000.000.000-00', mascara:'cpf', teclado:'numeric',
         validar:v => validarCPF(v) || 'Esse CPF não confere. Pode conferir e mandar de novo?' },
-      { id:`dep${n}_nascimento`, tipo:'texto', grupo:'Dependentes', campo:`dep${n}_nascimento`, rotulo:`Nascimento (${ord(n)} dep.)`, condicao:c,
-        pergunta:`<b>Data de nascimento</b> do ${ord(n)} dependente?`, placeholder:'DD/MM/AAAA', mascara:'data', teclado:'numeric', validar:validarData }
+      { id:`dep${n}_nascimento`, tipo:'data', grupo:'Dependentes', campo:`dep${n}_nascimento`, rotulo:`Nascimento (${ord(n)} dep.)`, condicao:c,
+        pergunta:`<b>Data de nascimento</b> do ${ord(n)} dependente?` }
     );
   }
   const i = ROTEIRO.findIndex(s => s.id === 'qtd_dependentes');
@@ -1083,9 +1082,43 @@ async function rodar(){
   await falarBot(montarPergunta(passo));
 
   if (passo.tipo === 'texto')   return comporTexto(passo);
+  if (passo.tipo === 'data')    return comporData(passo);
   if (passo.tipo === 'opcoes')  return comporOpcoes(passo);
   if (passo.tipo === 'upload')  return comporUpload(passo);
   if (passo.tipo === 'revisao') return comporRevisao(passo);
+}
+
+/* ── Composer: data (calendário nativo) ───────────── */
+function comporData(p){
+  const hoje = new Date().toISOString().slice(0, 10);
+  elComp.innerHTML = `
+    <div class="campo-linha">
+      <input class="campo campo-data" id="entrada" type="date" max="${hoje}" min="1930-01-01">
+      <button class="enviar" id="btn-enviar" disabled aria-label="Enviar">${ICO.enviar}</button>
+    </div>`;
+  const inp = $('#entrada'), btn = $('#btn-enviar');
+  /* pré-preenche se já houver valor (ex.: ao editar na revisão) */
+  const atual = estado.dados[p.campo];
+  if (atual && /^\d{2}\/\d{2}\/\d{4}$/.test(atual)){
+    const [d, m, a] = atual.split('/'); inp.value = `${a}-${m}-${d}`; btn.disabled = false;
+  }
+  const marcar = () => { btn.disabled = !inp.value; };
+  inp.addEventListener('input', marcar);
+  inp.addEventListener('change', marcar);
+  async function enviar(){
+    if (!inp.value) return;
+    const [a, m, d] = inp.value.split('-');
+    const fmt = `${d}/${m}/${a}`;
+    bolhaUser(fmt);
+    estado.dados[p.campo] = fmt;
+    elComp.innerHTML = '';
+    await espera(200);
+    avancar();
+  }
+  btn.addEventListener('click', enviar);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter' && !btn.disabled) enviar(); });
+  /* abre o calendário automaticamente quando o navegador permite */
+  setTimeout(() => { try { inp.showPicker && inp.showPicker(); } catch(e){} }, 120);
 }
 
 function montarPergunta(p){
