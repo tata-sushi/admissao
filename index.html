@@ -628,7 +628,9 @@ const ROTEIRO = [
       ? `Obrigada! Posso confirmar o seu <b>CPF</b>: ${MASCARAS.cpf(candidato.cpf)}?`
       : 'Obrigada! Agora, você pode me informar seu <b>CPF</b>?',
     confirmar:{ valor:() => candidato.cpf || '', valido:v => validarCPF(v),
-      titulo:'Confirmar CPF', mostrar:v => MASCARAS.cpf(v),
+      titulo:() => `Posso confirmar o CPF ${MASCARAS.cpf(candidato.cpf)}?`,
+      labelSim:'Sim, pode!', labelNao:'Não, quero corrigir',
+      mostrar:v => MASCARAS.cpf(v),
       perguntaCorrige:'Sem problema! Pode me informar seu CPF, por favor?' },
     placeholder:'000.000.000-00', mascara:'cpf', teclado:'numeric',
     validar:v => validarCPF(v) || 'Esse CPF não confere. Pode conferir e mandar de novo?' },
@@ -642,7 +644,9 @@ const ROTEIRO = [
       ? `Posso confirmar este número como seu <b>WhatsApp</b>: ${MASCARAS.telefone(candidato.telefone)}?`
       : 'Me passa seu <b>WhatsApp</b> com DDD, por favor?',
     confirmar:{ valor:() => candidato.telefone || '', valido:v => so(v).length >= 10,
-      titulo:'Confirmar WhatsApp', mostrar:v => MASCARAS.telefone(v),
+      titulo:() => `Posso confirmar o número ${MASCARAS.telefone(candidato.telefone)}?`,
+      labelSim:'Sim, pode!', labelNao:'Não, quero corrigir',
+      mostrar:v => MASCARAS.telefone(v),
       perguntaCorrige:'Sem problema! Pode me passar o número certo, com DDD?' },
     placeholder:'(11) 90000-0000', mascara:'telefone', teclado:'tel',
     validar:v => so(v).length >= 10 || 'Faltou algum número. Confere o DDD?' },
@@ -1083,8 +1087,10 @@ function comporTexto(p){
     const base = p.confirmar.valor();
     const valido = p.confirmar.valido ? p.confirmar.valido(base) : !!base;
     if (valido){
+      const tit = typeof p.confirmar.titulo === 'function'
+        ? p.confirmar.titulo() : (p.confirmar.titulo || p.tituloOpcoes || p.rotulo);
       chipsInline(
-        [{ v:'sim', label:'Sim, é esse', principal:true },
+        [{ v:'sim', label:p.confirmar.labelSim || 'Sim, é esse', principal:true },
          { v:'nao', label:p.confirmar.labelNao || 'Não, quero corrigir' }],
         async (o) => {
           if (o.v === 'sim'){
@@ -1100,7 +1106,7 @@ function comporTexto(p){
             comporTexto(p);
           }
         },
-        p.confirmar.titulo || p.tituloOpcoes || p.rotulo
+        tit
       );
       return;
     }
