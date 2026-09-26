@@ -649,6 +649,14 @@ const ROTEIRO = [
     placeholder:'000.000.000-00', mascara:'cpf', teclado:'numeric',
     validar:v => validarCPF(v) || 'Esse CPF não confere. Pode conferir e mandar de novo?' },
 
+  { id:'rg_numero', tipo:'texto', grupo:'Dados pessoais', campo:'rg_numero', rotulo:'RG',
+    pergunta:'Anotado! Agora, qual o número do seu <b>RG</b>?', placeholder:'00.000.000-0',
+    validar:v => so(v).length >= 5 || 'Confere o número do RG, por favor.' },
+
+  { id:'ctps_numero', tipo:'texto', grupo:'Dados pessoais', campo:'ctps_numero', rotulo:'CTPS (nº)',
+    pergunta:'Perfeito! E o número da sua <b>Carteira de Trabalho (CTPS)</b>?', placeholder:'0000000 série 000',
+    validar:v => v.trim().length >= 3 || 'Me passa o número da CTPS, por favor.' },
+
   { id:'nascimento', tipo:'data', grupo:'Dados pessoais', campo:'nascimento', rotulo:'Data de nascimento',
     pergunta:'E qual sua <b>data de nascimento</b>?', minIdade:16,
     msgIdade:'Parece que há algo errado com a data. Consegue verificar?' },
