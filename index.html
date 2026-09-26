@@ -609,12 +609,14 @@ const ROTEIRO = [
 
   /* ── Dados pessoais ─────────────────────────────── */
   { id:'nome', tipo:'texto', grupo:'Dados pessoais', campo:'nome', rotulo:'Nome completo',
-    pergunta:'Primeiro, me diga seu <b>nome completo</b>, igualzinho está no documento.',
+    pergunta:() => `Então vamos lá!!!<br>${primeiroNome() ? primeiroNome() + ', você' : 'Você'} pode me confirmar seu <b>nome completo</b>, exatamente como está no seu documento, por favor?`,
+    valorInicial:() => candidato.nome || '',
     placeholder:'Ex.: Maria Aparecida da Silva',
     validar:v => v.trim().split(/\s+/).length >= 2 || 'Preciso do nome e do sobrenome, tudo bem?' },
 
   { id:'nome_social', tipo:'opcoes', grupo:'Dados pessoais', campo:'usa_nome_social', rotulo:'Usa nome social', ocultarRevisao:true,
-    pergunta:'Você usa <b>nome social</b> e prefere ser chamado(a) por ele no dia a dia?',
+    pergunta:'Você tem um <b>nome social</b> pelo qual prefere ser chamado(a)?',
+    tituloOpcoes:'Usa nome social?',
     opcoes:[{v:'nao', label:'Não'}, {v:'sim', label:'Sim, uso'}] },
   { id:'qual_nome_social', tipo:'texto', grupo:'Dados pessoais', campo:'nome_social', rotulo:'Nome social',
     condicao:d => d.usa_nome_social === 'sim',
@@ -622,32 +624,36 @@ const ROTEIRO = [
     validar:v => v.trim().length >= 2 || 'Escreva pelo menos 2 letras.' },
 
   { id:'cpf', tipo:'texto', grupo:'Dados pessoais', campo:'cpf', rotulo:'CPF',
-    pergunta:'Agora o seu <b>CPF</b>.', dica:'Usamos só para o registro em carteira.',
+    pergunta:'Obrigada! Agora, você pode me informar seu <b>CPF</b>?',
     placeholder:'000.000.000-00', mascara:'cpf', teclado:'numeric',
     validar:v => validarCPF(v) || 'Esse CPF não confere. Pode conferir e mandar de novo?' },
 
   { id:'nascimento', tipo:'texto', grupo:'Dados pessoais', campo:'nascimento', rotulo:'Data de nascimento',
-    pergunta:'Qual a sua <b>data de nascimento</b>?', placeholder:'DD/MM/AAAA',
+    pergunta:'E qual sua <b>data de nascimento</b>?', placeholder:'DD/MM/AAAA',
     mascara:'data', teclado:'numeric', validar:validarData },
 
   { id:'telefone', tipo:'texto', grupo:'Dados pessoais', campo:'telefone', rotulo:'WhatsApp',
-    pergunta:'Me passa seu <b>WhatsApp</b> com DDD? É por ele que a liderança vai te avisar da escala.',
+    pergunta:() => candidato.telefone
+      ? `Posso confirmar este número como seu <b>celular e WhatsApp</b>: ${MASCARAS.telefone(candidato.telefone)}?`
+      : 'Me passa seu <b>WhatsApp</b> com DDD, por favor?',
+    valorInicial:() => candidato.telefone || '',
     placeholder:'(11) 90000-0000', mascara:'telefone', teclado:'tel',
     validar:v => so(v).length >= 10 || 'Faltou algum número. Confere o DDD?' },
 
   { id:'email', tipo:'texto', grupo:'Dados pessoais', campo:'email', rotulo:'E-mail',
-    pergunta:'E o seu <b>e-mail</b>? Vamos mandar o contrato para assinatura nele.',
+    pergunta:'Obrigada! Ainda não tenho seu <b>e-mail</b>. Pode me passar?',
     placeholder:'voce@email.com', teclado:'email',
     validar:v => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v.trim()) || 'Esse e-mail parece incompleto.' },
 
   { id:'estado_civil', tipo:'opcoes', grupo:'Dados pessoais', campo:'estado_civil', rotulo:'Estado civil',
     pergunta:'Qual o seu <b>estado civil</b>?',
+    tituloOpcoes:'Qual seu estado civil?',
     opcoes:[{v:'solteiro',label:'Solteiro(a)'},{v:'casado',label:'Casado(a)'},
             {v:'uniao',label:'União estável'},{v:'divorciado',label:'Divorciado(a)'},{v:'viuvo',label:'Viúvo(a)'}] },
 
   { id:'dependentes', tipo:'opcoes', grupo:'Dados pessoais', campo:'tem_dependentes', rotulo:'Tem dependentes',
-    pergunta:'Você tem <b>filhos ou dependentes</b> menores de 14 anos?',
-    dica:'Isso conta para salário-família e imposto de renda.',
+    pergunta:'Você tem <b>filhos ou dependentes</b> menores de 14 anos para fins de salário-família e imposto de renda?',
+    tituloOpcoes:'Tem dependentes menores de 14 anos?',
     opcoes:[{v:'nao',label:'Não tenho'},{v:'sim',label:'Sim, tenho'}] },
   { id:'qtd_dependentes', tipo:'opcoes', grupo:'Dados pessoais', campo:'qtd_dependentes', rotulo:'Qtd. de dependentes',
     condicao:d => d.tem_dependentes === 'sim',
@@ -655,7 +661,7 @@ const ROTEIRO = [
 
   /* ── Endereço ───────────────────────────────────── */
   { id:'cep', tipo:'texto', grupo:'Endereço', campo:'cep', rotulo:'CEP',
-    pergunta:'Vamos ao endereço. Qual o seu <b>CEP</b>?',
+    pergunta:'Agora, vamos para o seu endereço.<br>Qual o seu <b>CEP</b>?',
     placeholder:'00000-000', mascara:'cep', teclado:'numeric',
     validar:v => so(v).length === 8 || 'O CEP tem 8 números.' },
 
@@ -1032,7 +1038,7 @@ async function rodar(){
 
 function montarPergunta(p){
   if (p.tipo === 'revisao') return 'Prontinho! Dá uma conferida em tudo antes de eu enviar para o RH — se algo estiver errado, é só tocar em <b>Editar</b>.';
-  let h = p.pergunta;
+  let h = typeof p.pergunta === 'function' ? p.pergunta() : p.pergunta;
   /* a dica das opções entra na própria fala do bot (as opções agora ficam
      inline, sem a barra de baixo onde a dica aparecia antes) */
   if (p.dica && p.tipo === 'opcoes') h += `<span class="obs">${p.dica}</span>`;
@@ -1063,6 +1069,11 @@ function comporTexto(p){
     ${p.opcional ? '<div class="chips" style="margin-top:10px"><button class="chip leve" id="pular">Pular por enquanto</button></div>' : ''}`;
 
   const inp = $('#entrada'), btn = $('#btn-enviar');
+  /* pré-preenche quando já temos o dado da base (ex.: confirmar o WhatsApp) */
+  if (p.valorInicial){
+    const v0 = p.valorInicial() || '';
+    if (v0){ inp.value = p.mascara ? MASCARAS[p.mascara](v0) : v0; btn.disabled = inp.value.trim().length === 0; }
+  }
   inp.focus();
 
   inp.addEventListener('input', () => {
@@ -1148,7 +1159,7 @@ async function comporOpcoes(p){
       return;
     }
     avancar();
-  }, p.rotulo);
+  }, p.tituloOpcoes || p.rotulo);
 }
 
 /* ── Composer: upload ─────────────────────────────── */
@@ -1467,6 +1478,7 @@ async function validarGate(){
   if (r && r.ok){
     candidato.cargo = r.cargo || '';
     candidato.unidade = r.unidade || '';
+    candidato.telefone = r.contato || '';
     sucessoGate(r.nome);
     return;
   }
