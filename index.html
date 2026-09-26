@@ -254,14 +254,15 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
 }
 
 /* cartão final — padrão .hero-card do app */
+/* card final: de lateral a lateral (compensa o padding das mensagens) */
+.linha-final{ margin:12px -20px 8px; animation:surge .32s ease both; }
 .final{
-  max-width:min(90%,440px);
-  border-radius:var(--raio-card);
-  border:1px solid rgb(var(--accent) / .25);
+  border-top:1px solid rgb(var(--accent) / .25);
+  border-bottom:1px solid rgb(var(--accent) / .25);
   background:
     radial-gradient(120% 140% at 0% 0%, rgb(var(--accent) / .18) 0%, rgb(var(--accent) / .05) 45%, transparent 70%),
     rgb(var(--surface));
-  padding:24px; text-align:center;
+  padding:28px 24px; text-align:center;
 }
 .final .ok{
   width:52px; height:52px; border-radius:var(--raio-pill);
@@ -1536,8 +1537,8 @@ async function concluir(){
   await falarBot(`Show, ${escapar(primeiro)}!<br>Sua ficha de admissão foi enviada. 🎉<br>Agora, é só aguardar as instruções da área de <b>Gente & Gestão</b>.<br><br>Seja muito bem-vindo(a) ao time do Tatá! 🍣`);
 
   const cartao = document.createElement('div');
-  cartao.className = 'linha de-bot';
-  cartao.innerHTML = `<div class="av-bot oculto"></div>
+  cartao.className = 'linha-final';
+  cartao.innerHTML = `
     <div class="final">
       <div class="ok">${ICO.check}</div>
       <h3>Admissão registrada</h3>
