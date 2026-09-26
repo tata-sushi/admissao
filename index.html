@@ -697,15 +697,27 @@ const ROTEIRO = [
             {v:'medio_inc',label:'Médio incompleto'},{v:'medio',label:'Médio completo'},
             {v:'sup_inc',label:'Superior incompleto'},{v:'sup',label:'Superior completo'}] },
 
-  { id:'uniforme', tipo:'opcoes', grupo:'Trabalho e uniforme', campo:'uniforme', rotulo:'Tamanho do uniforme',
-    pergunta:'Qual o seu <b>tamanho de uniforme</b>?',
+  { id:'camiseta', tipo:'opcoes', grupo:'Trabalho e uniforme', campo:'tam_camiseta', rotulo:'Tamanho da camiseta',
+    pergunta:'Agora, vamos para as informações do seu uniforme.<br>Qual o tamanho da sua <b>camiseta</b>?',
+    tituloOpcoes:'Tamanho da camiseta',
     dica:'A camiseta é de modelagem tradicional.',
     opcoes:[{v:'PP',label:'PP'},{v:'P',label:'P'},{v:'M',label:'M'},{v:'G',label:'G'},{v:'GG',label:'GG'},{v:'XG',label:'XG'}] },
 
-  { id:'calcado', tipo:'texto', grupo:'Trabalho e uniforme', campo:'calcado', rotulo:'Nº do calçado',
-    pergunta:'E o número do seu <b>calçado</b>? A gente fornece o sapato antiderrapante.',
-    placeholder:'Ex.: 38', teclado:'numeric',
-    validar:v => { const n = +so(v); return (n >= 30 && n <= 48) || 'Coloque um número entre 30 e 48.'; } },
+  { id:'calca', tipo:'opcoes', grupo:'Trabalho e uniforme', campo:'tam_calca', rotulo:'Tamanho da calça',
+    pergunta:'Obrigada. Qual o tamanho da sua <b>calça</b>?',
+    tituloOpcoes:'Tamanho da calça',
+    opcoes:[{v:'PP',label:'PP'},{v:'P',label:'P'},{v:'M',label:'M'},{v:'G',label:'G'},{v:'GG',label:'GG'},{v:'XG',label:'XG'}] },
+
+  { id:'calcado', tipo:'opcoes', grupo:'Trabalho e uniforme', campo:'calcado', rotulo:'Nº do sapato',
+    pergunta:'Para finalizar, preciso do tamanho do <b>sapato</b>.',
+    dica:'A gente fornece o sapato antiderrapante.',
+    tituloOpcoes:'Tamanho do sapato',
+    opcoes:[{v:'32',label:'32'},{v:'33',label:'33'},{v:'34',label:'34'},{v:'35',label:'35'},{v:'36',label:'36'},{v:'37',label:'37'},{v:'38',label:'38'},{v:'39',label:'39'},{v:'40',label:'40'},{v:'41',label:'41'},{v:'42',label:'42'},{v:'43',label:'43'},{v:'44',label:'44'},{v:'45',label:'45'}] },
+
+  { id:'bibico', tipo:'texto', grupo:'Trabalho e uniforme', campo:'bibico', rotulo:'Bibico', opcional:true,
+    pergunta:'Ops, já estava esquecendo! Caso você use <b>bibico</b>, qual o tamanho?',
+    placeholder:'Ex.: tamanho ou número', textoPular:'Não uso bibico',
+    validar:v => v.trim().length >= 1 || 'Me diz o tamanho, por favor.' },
 
   { id:'restricao', tipo:'opcoes', grupo:'Trabalho e uniforme', campo:'restricao_saude', rotulo:'Restrição de saúde',
     pergunta:'Você tem alguma <b>restrição de saúde ou alergia</b> que a gente precise saber?',
@@ -1101,7 +1113,7 @@ function comporTexto(p){
              ${p.teclado ? `inputmode="${p.teclado}"` : ''}>
       <button class="enviar" id="btn-enviar" disabled aria-label="Enviar">${ICO.enviar}</button>
     </div>
-    ${p.opcional ? '<div class="chips" style="margin-top:10px"><button class="chip leve" id="pular">Pular por enquanto</button></div>' : ''}`;
+    ${p.opcional ? `<div class="chips" style="margin-top:10px"><button class="chip leve" id="pular">${p.textoPular || 'Pular por enquanto'}</button></div>` : ''}`;
 
   const inp = $('#entrada'), btn = $('#btn-enviar');
   /* pré-preenche quando já temos o dado da base (ex.: confirmar o WhatsApp) */
@@ -1120,7 +1132,7 @@ function comporTexto(p){
   btn.addEventListener('click', enviar);
   const pular = $('#pular');
   if (pular) pular.addEventListener('click', async () => {
-    bolhaUser('Prefiro pular por enquanto');
+    bolhaUser(p.textoPular || 'Prefiro pular por enquanto');
     estado.dados[p.campo] = null;
     elComp.innerHTML = '';           /* trava para não enviar duas vezes */
     await espera(220);
