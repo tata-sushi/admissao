@@ -1504,7 +1504,7 @@ async function comporRevisao(){
   }));
 
   await espera(300);
-  await falarBot('Está tudo certo? Se estiver, é só confirmar que eu envio para o RH. 😊');
+  await falarBot('Está tudo certo?<br>Se estiver, é só confirmar que eu envio para o RH. 😊');
   chipsInline([{ v:'ok', label:'Sim, está tudo certo', principal:true }], async (o) => {
     bolhaUser(o.label);
     await espera(230);
