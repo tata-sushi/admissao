@@ -430,6 +430,7 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
 .pin.erro input{ border-color:rgb(var(--danger)); }
 @keyframes tremor{ 0%,100%{ transform:translateX(0); } 20%,60%{ transform:translateX(-6px); } 40%,80%{ transform:translateX(6px); } }
 .pin.tremer{ animation:tremor .4s; }
+.pin.carregando{ opacity:.55; pointer-events:none; }
 
 .gate-msg{ min-height:20px; font-size:13.5px; font-weight:500; color:rgb(var(--danger)); }
 
@@ -1360,6 +1361,12 @@ const DEMO_NOME = 'Maria Aparecida da Silva';   // simulação: no ar, o nome ve
 const MAX_TENTATIVAS = 5;
 let tentativasGate = 0;
 
+/* modo real: link pessoal com ?t=<token>. Sem token, roda o demo acima. */
+const API_ACESSO = 'https://aoqsbusfrffapjglpqjk.supabase.co/functions/v1/admissao-acesso';
+const TOKEN = new URLSearchParams(location.search).get('t') || '';
+const MODO_REAL = !!TOKEN;
+let gateOcupado = false;
+
 const gateEl     = $('#gate');
 const gateInputs = [...gateEl.querySelectorAll('#gate-pin input')];
 const gatePin    = $('#gate-pin');
@@ -1379,27 +1386,94 @@ function mostrarGate(){
   setTimeout(() => gateInputs[0].focus(), 60);
 }
 
-function validarGate(){
-  const v = gateInputs.map(i => i.value).join('');
-  if (v.length < 4) return;
-  if (v === DEMO_CPF4){
-    candidato.nome = DEMO_NOME;   // simulação; no ar, o nome vem junto da validação de acesso
-    gateMsg.textContent = '';
-    gateEl.classList.add('saindo');
-    setTimeout(() => { gateEl.style.display = 'none'; comecarFluxo(); }, 320);
-    return;
-  }
-  tentativasGate++;
+function sucessoGate(nome){
+  candidato.nome = nome || '';
+  gateMsg.textContent = '';
+  gateEl.classList.add('saindo');
+  setTimeout(() => { gateEl.style.display = 'none'; comecarFluxo(); }, 320);
+}
+
+function tremerPin(){
   gatePin.classList.add('erro','tremer');
   setTimeout(() => gatePin.classList.remove('tremer'), 420);
   gateInputs.forEach(i => i.value = '');
   gateInputs[0].focus();
-  if (tentativasGate >= MAX_TENTATIVAS){
-    $('#gate-form').style.display = 'none';
-    $('#gate-bloqueado').style.display = '';
-  } else {
-    const restam = MAX_TENTATIVAS - tentativasGate;
-    gateMsg.textContent = `CPF não confere. ${restam} ${restam === 1 ? 'tentativa restante' : 'tentativas restantes'}.`;
+}
+
+function gateEncerrado(titulo, texto){
+  $('#gate-form').style.display = 'none';
+  const bl = $('#gate-bloqueado');
+  bl.style.display = '';
+  bl.querySelector('h1').textContent = titulo;
+  bl.querySelector('.gate-sub').innerHTML = texto;
+  const btn = $('#gate-recomecar');
+  if (btn) btn.style.display = MODO_REAL ? 'none' : '';
+}
+
+async function validarGate(){
+  const v = gateInputs.map(i => i.value).join('');
+  if (v.length < 4 || gateOcupado) return;
+
+  /* ── demo (sem token no link) ── */
+  if (!MODO_REAL){
+    if (v === DEMO_CPF4){ sucessoGate(DEMO_NOME); return; }
+    tentativasGate++;
+    tremerPin();
+    if (tentativasGate >= MAX_TENTATIVAS){
+      gateEncerrado('Acesso bloqueado', 'Muitas tentativas seguidas. Fale com o RH do Tatá pelo <b>(11) 90000-0000</b> para liberar o acesso de novo.');
+    } else {
+      const restam = MAX_TENTATIVAS - tentativasGate;
+      gateMsg.textContent = `CPF não confere. ${restam} ${restam === 1 ? 'tentativa restante' : 'tentativas restantes'}.`;
+    }
+    return;
+  }
+
+  /* ── real (valida no backend) ── */
+  gateOcupado = true;
+  gatePin.classList.add('carregando');
+  gateMsg.textContent = 'Conferindo…';
+  let r;
+  try {
+    const resp = await fetch(API_ACESSO, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: TOKEN, cpf4: v }),
+    });
+    r = await resp.json();
+  } catch (e){ r = { ok:false, motivo:'rede' }; }
+  gateOcupado = false;
+  gatePin.classList.remove('carregando');
+
+  if (r && r.ok){
+    candidato.cargo = r.cargo || '';
+    candidato.unidade = r.unidade || '';
+    sucessoGate(r.nome);
+    return;
+  }
+
+  switch (r && r.motivo){
+    case 'cpf_errado': {
+      tremerPin();
+      const n = r.tentativas_restantes;
+      gateMsg.textContent = `CPF não confere. ${n} ${n === 1 ? 'tentativa restante' : 'tentativas restantes'}.`;
+      break;
+    }
+    case 'bloqueado':
+      gateEncerrado('Acesso bloqueado', 'Muitas tentativas seguidas. Fale com o RH do Tatá para liberar seu acesso de novo.');
+      break;
+    case 'expirado':
+      gateEncerrado('Link expirado', 'Este link valia por 48 horas e já expirou. Fale com o RH do Tatá para receber um novo.');
+      break;
+    case 'ja_enviado':
+      gateEncerrado('Tudo enviado 🎉', 'Seus dados e documentos já foram enviados. O RH vai te chamar se precisar de mais alguma coisa.');
+      break;
+    case 'nao_encontrado':
+    case 'sem_token':
+      gateEncerrado('Link inválido', 'Confira se você abriu o link completo que o RH do Tatá te enviou.');
+      break;
+    default:
+      tremerPin();
+      gateMsg.textContent = 'Tivemos um probleminha para conferir. Tente de novo em instantes.';
   }
 }
 
@@ -1425,6 +1499,10 @@ gateInputs.forEach((inp, idx) => {
 $('#gate-recomecar').addEventListener('click', mostrarGate);
 
 /* ── Início ───────────────────────────────────────── */
+if (MODO_REAL){
+  document.querySelector('.gate-demo')?.remove();          // sem dica de simulação
+  const b = $('#gate-recomecar'); if (b) b.style.display = 'none';
+}
 atualizarProgresso(null);
 mostrarGate();
 </script>
