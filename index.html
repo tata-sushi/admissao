@@ -682,12 +682,12 @@ const ROTEIRO = [
     validar:v => v.trim().length >= 4 || 'Escreva o bairro e a cidade.' },
 
   { id:'transporte', tipo:'opcoes', grupo:'Endereço', campo:'vale_transporte', rotulo:'Vale-transporte',
-    pergunta:'Você vai precisar de <b>vale-transporte</b>?',
+    pergunta:'Você vai precisar de <b>Vale-Transporte</b> para ir e voltar do trabalho?',
     opcoes:[{v:'sim',label:'Sim, vou precisar'},{v:'nao',label:'Não, vou por conta própria'}] },
   { id:'linhas', tipo:'texto', grupo:'Endereço', campo:'linhas', rotulo:'Linhas / condução',
     condicao:d => d.vale_transporte === 'sim',
-    pergunta:'Quais <b>conduções</b> você usa até a unidade? Pode escrever do jeito que souber.',
-    placeholder:'Ex.: Metrô Linha 4 + ônibus 809U',
+    pergunta:'Ok! Aqui, preciso que você me fale <b>quantas conduções</b> você utilizará, quais são as <b>linhas</b> e qual o <b>valor</b> de cada uma delas. Tudo bem?',
+    placeholder:'Ex.: 2 conduções — Metrô Linha 4 (R$ 5,00) + ônibus 809U (R$ 4,40)',
     validar:v => v.trim().length >= 3 || 'Me conta pelo menos uma linha.' },
 
   /* ── Trabalho e uniforme ────────────────────────── */
