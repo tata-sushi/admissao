@@ -988,7 +988,8 @@ async function falarBot(html, primeira = true){
   await espera(Math.min(1300, Math.max(480, texto.length * 13)));
   p.remove();
   bolhaBot(html, primeira);
-  await espera(140);
+  /* pausa de leitura proporcional ao tamanho — evita as falas caírem uma em cima da outra */
+  await espera(Math.min(2200, Math.max(600, texto.length * 28)));
 }
 
 /* ── Ciclo principal ──────────────────────────────── */
@@ -1127,7 +1128,9 @@ function chipsInline(opcoes, aoEscolher, titulo){
   /* obrigatório: não fecha tocando por fora — só escolhendo uma opção */
 }
 
-function comporOpcoes(p){
+async function comporOpcoes(p){
+  /* segura o pop-up alguns instantes: dá tempo de ler a pergunta antes de ele subir */
+  await espera(900);
   /* a barra de baixo fica vazia (e some) — as opções vão para o pop-up */
   chipsInline(p.opcoes, async (o) => {
     bolhaUser(o.label);
