@@ -1799,23 +1799,22 @@ const ENDERECO_UNIDADE = {
 };
 function enderecoUnidade(u){
   if (!u) return '';
-  const k = u.toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-  return ENDERECO_UNIDADE.hasOwnProperty(k) ? ENDERECO_UNIDADE[k] : '';
+  const k = u.toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+  return ENDERECO_UNIDADE.hasOwnProperty(k) ? ENDERECO_UNIDADE[k] : u;
 }
-/* separa da observacao as linhas "Contrato:" e "Intervalo:" do texto livre */
+/* interpreta a observacao: separa Intervalo / Contrato / texto livre */
 function parseVagaObs(str){
   const lines = String(str || '').split('\n');
   let contratos = [], intervalo = '', livre = [];
   lines.forEach(ln => {
-    const mc = ln.match(/^\s*Contrato:\s*(.+)$/i);
-    const mi = ln.match(/^\s*Intervalo:\s*(.+)$/i);
+    const mc = ln.match(/^\s*Contrato:\s*(.+)$/i), mi = ln.match(/^\s*Intervalo:\s*(.+)$/i);
     if (mc)      contratos = mc[1].split(',').map(s => s.trim()).filter(Boolean);
     else if (mi) intervalo = mi[1].trim();
-    else if (ln.trim()) livre.push(ln.trim());
+    else         livre.push(ln);
   });
-  return { contratos, intervalo, livre: livre.join('\n') };
+  return { contratos, intervalo, livre: livre.join('\n').replace(/^\n+|\n+$/g, '') };
 }
-const fmtRS = v => (v == null || v === '') ? '' : 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
+const fmtR$ = v => (v == null || v === '') ? '' : 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
 
 /* MONTA A PROPOSTA — mesma ordem do recrutamento.
    (No recrutamento a remuneração só aparece pra quem pode ver valores;
@@ -1825,16 +1824,11 @@ function montarProposta(v){
   const pv = parseVagaObs(v.observacao), L = [];
   L.push('*' + (v.cargo || '') + '*');
   if (v.escala) L.push('Escala: ' + v.escala);
-  const end = enderecoUnidade(v.unidade);
-  if (end) L.push('Endereço: ' + end);                                    /* [reconstruído — rótulo cortado no print] */
-  if (v.horario){
-    let h = 'Horário: ' + v.horario;
-    if (pv.intervalo) h += ' — Intervalo: ' + pv.intervalo;               /* [reconstruído — cortado no print] */
-    L.push(h);
-  }
+  const end = enderecoUnidade(v.unidade); if (end) L.push('Unidade: ' + end);
+  if (v.horario){ let h = 'Horário: ' + v.horario; if (pv.intervalo) h += ' (intervalo de ' + pv.intervalo + ')'; L.push(h); }
   if (v.salario_fixo != null){
-    let s = 'Remuneração: Salário fixo de ' + fmtRS(v.salario_fixo);      /* [reconstruído — "Salário…" cortado] */
-    if (v.salario_bruto != null) s += ' + prêmio e/ou gorjetas';          /* [reconstruído — cortado no print] */
+    let s = 'Remuneração: Salário fixo de ' + fmtR$(v.salario_fixo);
+    if (v.salario_bruto != null) s += ' + prêmio e/ou gorjeta, com remuneração bruta aproximada de ' + fmtR$(v.salario_bruto);
     s += '.';
     L.push(s);
   }
