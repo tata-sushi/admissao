@@ -1949,9 +1949,16 @@ async function validarGate(){
     candidato.unidade = r.unidade || '';
     candidato.telefone = r.contato || '';
     candidato.cpf = r.cpf || '';
-    /* proposta montada na hora a partir da vaga (join admissoes→rec_candidaturas→vagas) */
-    candidato.vaga = r.vaga || null;
-    candidato.proposta = candidato.vaga ? montarProposta(candidato.vaga) : (r.proposta || '');
+    /* proposta montada na hora a partir da vaga (join admissoes→rec_candidaturas→vagas).
+       Enquanto a admissao_acesso não devolve o objeto `vaga` completo, montamos com
+       o que já vem hoje (cargo/unidade) — completa sozinho quando o backend enviar. */
+    const vaga = r.vaga || ((r.cargo || r.unidade) ? {
+      cargo:r.cargo, escala:r.escala, unidade:r.unidade, horario:r.horario,
+      salario_fixo:r.salario_fixo, salario_bruto:r.salario_bruto,
+      beneficios:r.beneficios, observacao:r.observacao
+    } : null);
+    candidato.vaga = vaga;
+    candidato.proposta = vaga ? montarProposta(vaga) : (r.proposta || '');
     sucessoGate(r.nome);
     return;
   }
