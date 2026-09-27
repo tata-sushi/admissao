@@ -1566,6 +1566,15 @@ function comporUpload(p){
     estado.arquivos[p.doc] = { pulado:false, rotulo:p.rotulo, itens };
     elComp.innerHTML = '';
     await espera(300);
+    if (MODO_REAL && TOKEN){                    /* sobe o arquivo pro Storage */
+      const guardando = bolhaBot('Guardando o documento com segurança… 🔒');
+      const ok = await subirDocumentos(p.doc, arqs, itens);
+      guardando.remove();
+      if (!ok){
+        await falarBot('Tive um probleminha pra guardar esse arquivo agora. Pode reenviar, por favor?');
+        return comporUpload(p);                 /* reoferece o upload */
+      }
+    }
     await conferirDocumento(p, arqs);          /* OCR: confere o CPF do documento */
     const msg = typeof p.recebido === 'function' ? p.recebido()
               : (p.recebido || 'Recebido!');
@@ -1576,6 +1585,37 @@ function comporUpload(p){
 
 const tamanho = b => b < 1024*1024 ? `${Math.max(1, Math.round(b/1024))} KB` : `${(b/1048576).toFixed(1)} MB`;
 const escapar = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ── Upload de documentos pro Storage (signed URL) ─────
+   Só no link real. Pede uma signed upload URL (Edge admissao-doc-url,
+   validando token+CPF) e sobe o arquivo direto pro bucket. Anota
+   bucket/path no item pra ir no payload. */
+async function subirDocumentos(doc, arqs, itens){
+  if (!(MODO_REAL && TOKEN)) return true;                 /* demo: não sobe nada */
+  const cpf4 = so(candidato.cpf || '').slice(0, 4);
+  if (cpf4.length < 4) return true;
+  let ok = true;
+  for (let i = 0; i < arqs.length; i++){
+    const f = arqs[i];
+    try {
+      const meta = await fetch(API_DOC_URL, {
+        method:'POST', headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ token:TOKEN, cpf4, doc, filename:f.name, contentType:f.type })
+      }).then(r => r.json());
+      if (!meta || !meta.ok || !meta.signedUrl) throw new Error((meta && meta.motivo) || 'sem_url');
+      const put = await fetch(meta.signedUrl, {
+        method:'PUT',
+        headers:{ 'Content-Type': f.type || 'application/octet-stream' },
+        body: f
+      });
+      if (!put.ok) throw new Error('http_' + put.status);
+      itens[i].bucket = meta.bucket; itens[i].path = meta.path; itens[i].enviado = true;
+    } catch(e){
+      itens[i].enviado = false; itens[i].erro = String((e && e.message) || e); ok = false;
+    }
+  }
+  return ok;
+}
 
 /* ── Composer: validação da proposta ──────────────────
    Mostra o "cópia e cola" da vaga (candidato.proposta) num card e pede
@@ -1748,7 +1788,8 @@ function payload(){
     docs[k] = {
       rotulo:a.rotulo,
       status:a.pulado ? 'pendente' : 'recebido',
-      arquivos:a.itens.map(i => ({ nome:i.nome, tipo:i.tipo, tamanho_bytes:i.tamanho }))
+      arquivos:a.itens.map(i => ({ nome:i.nome, tipo:i.tipo, tamanho_bytes:i.tamanho,
+        bucket:i.bucket || null, path:i.path || null, enviado:i.enviado === true }))
     };
   });
   const dados = { ...estado.dados };
@@ -1869,6 +1910,7 @@ let tentativasGate = 0;
 
 /* modo real: link pessoal com ?t=<token>. Sem token, roda o demo acima. */
 const API_ACESSO = 'https://aoqsbusfrffapjglpqjk.supabase.co/functions/v1/admissao-acesso';
+const API_DOC_URL = 'https://aoqsbusfrffapjglpqjk.supabase.co/functions/v1/admissao-doc-url';
 const TOKEN = new URLSearchParams(location.search).get('t') || '';
 const MODO_REAL = !!TOKEN;
 let gateOcupado = false;
