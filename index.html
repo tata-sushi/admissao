@@ -1583,9 +1583,15 @@ const escapar = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;',
 async function comporProposta(p){
   await falarBot('Antes de começar o seu cadastro, dá uma olhada na sua <b>proposta</b>, combinado?');
   /* o texto vem de montarProposta() com *negrito* estilo WhatsApp e quebras de linha */
+  /* negrito no cargo (*...*) e nos rótulos (o "Nome:" antes do 1º dois-pontos) */
   const texto = escapar(String(candidato.proposta || '').trim())
-    .replace(/\*([^*]+)\*/g, '<b>$1</b>')
-    .replace(/\n/g, '<br>');
+    .split('\n')
+    .map(ln => {
+      if (/^\*[^*]+\*$/.test(ln)) return ln.replace(/\*([^*]+)\*/g, '<b>$1</b>');
+      const m = ln.match(/^([^:]+:)(.*)$/);   /* rótulo até o 1º ":" (valores tipo 08:00 ficam intactos) */
+      return m ? `<b>${m[1]}</b>${m[2]}` : ln;
+    })
+    .join('<br>');
   const linha = document.createElement('div');
   linha.className = 'linha-proposta';
   linha.innerHTML = `<div class="proposta">
