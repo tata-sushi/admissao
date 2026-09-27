@@ -639,7 +639,7 @@ const ROTEIRO = [
 
   /* ── Dados pessoais ─────────────────────────────── */
   { id:'nome', tipo:'texto', grupo:'Dados pessoais', campo:'nome', rotulo:'Nome completo',
-    pergunta:() => `Então, vamos lá!!!<br>${primeiroNome() ? primeiroNome() + ', você' : 'Você'} pode me confirmar seu <b>nome completo</b>, exatamente como está no seu documento, por favor?`,
+    pergunta:() => `Bora lá!!!!<br>${primeiroNome() ? primeiroNome() + ', você' : 'Você'} pode me confirmar seu <b>nome completo</b>, exatamente como está no seu documento, por favor?`,
     valorInicial:() => candidato.nome || '',
     placeholder:'Ex.: Maria Aparecida da Silva',
     validar:v => v.trim().split(/\s+/).length >= 2 || 'Preciso do nome e do sobrenome, tudo bem?' },
@@ -1621,7 +1621,7 @@ async function subirDocumentos(doc, arqs, itens){
    Mostra o "cópia e cola" da vaga (candidato.proposta) num card e pede
    a confirmação antes de iniciar o cadastro. */
 async function comporProposta(p){
-  await falarBot('Antes de começar o seu cadastro, dá uma olhada na sua <b>proposta</b>, combinado?');
+  await falarBot('Antes de começar seu cadastro, vamos validar a sua <b>proposta</b>.  ;)');
   /* o texto vem de montarProposta() com *negrito* estilo WhatsApp e quebras de linha */
   /* negrito no cargo (*...*) e nos rótulos (o "Nome:" antes do 1º dois-pontos) */
   const texto = escapar(String(candidato.proposta || '').trim())
@@ -1640,11 +1640,11 @@ async function comporProposta(p){
     </div>`;
   elMsgs.appendChild(linha); rolar();
   await espera(500);
-  await falarBot('Está tudo certo com a sua proposta?');
+  await falarBot('Está de acordo com a sua proposta?');
 
   const perguntar = () => chipsInline([
-    { v:'sim',    label:'Sim, confirmo', principal:true },
-    { v:'duvida', label:'Não, tenho dúvidas', wa:true }
+    { v:'sim',    label:'Sim, estou!', principal:true },
+    { v:'duvida', label:'Não', wa:true }
   ], async (o) => {
     bolhaUser(o.label);
     /* guarda o texto montado da proposta p/ gravar junto do aceite (grupo trabalho) */
