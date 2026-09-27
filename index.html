@@ -787,11 +787,11 @@ const ROTEIRO = [
       'Para anexar os documentos, você pode fotografar ou anexar do seu celular. Só cuidado para não cortar a imagem ou deixar com reflexo.<br>Os tipos de arquivo que aceito são: JPG, PNG ou PDF, até 10 MB.'
     ]},
 
-  { id:'doc_identidade', tipo:'upload', grupo:'Documentos', doc:'identidade', rotulo:'RG ou CNH', multiplo:true,
+  { id:'doc_identidade', tipo:'upload', grupo:'Documentos', doc:'identidade', rotulo:'RG ou CNH', multiplo:true, ocr:{ cpf:true },
     pergunta:'Vamos começar com a foto do seu <b>RG (frente e verso)</b>. Pode ser <b>CNH (aberta)</b>.',
     recebido:'Recebido! Agora, vamos para o <b>CPF</b>. Pode ser a CNH também.' },
 
-  { id:'doc_cpf', tipo:'upload', grupo:'Documentos', doc:'cpf_doc', rotulo:'CPF',
+  { id:'doc_cpf', tipo:'upload', grupo:'Documentos', doc:'cpf_doc', rotulo:'CPF', ocr:{ cpf:true },
     recebido:'Recebido! Hora do <b>comprovante de residência</b> (pode ser conta de luz, água, internet…).' },
 
   { id:'doc_residencia', tipo:'upload', grupo:'Documentos', doc:'residencia', rotulo:'Comprovante de residência',
@@ -1438,8 +1438,68 @@ async function comporOpcoes(p){
   }, p.tituloOpcoes || p.rotulo, { grade: p.grade, colunas: p.colunas });
 }
 
+/* ── OCR client-side (Tesseract.js via CDN) ─────────────
+   Lê a foto do documento no próprio navegador — nada sai do aparelho.
+   Usado só para conferir números (ex.: CPF) contra o que a pessoa digitou.
+   É best-effort: se não carregar, der timeout ou não achar, o fluxo segue. */
+const OCR_SRC = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+let _ocrCarregando = null;
+function carregarOCR(){
+  if (window.Tesseract) return Promise.resolve(window.Tesseract);
+  if (_ocrCarregando) return _ocrCarregando;
+  _ocrCarregando = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = OCR_SRC; s.async = true;
+    s.onload = () => window.Tesseract ? resolve(window.Tesseract) : reject(new Error('Tesseract ausente'));
+    s.onerror = () => reject(new Error('falha ao baixar OCR'));
+    document.head.appendChild(s);
+  });
+  _ocrCarregando.catch(() => { _ocrCarregando = null; });  /* permite tentar de novo depois */
+  return _ocrCarregando;
+}
+const _comTimeout = (prom, ms, etq) => Promise.race([
+  prom, new Promise((_, r) => setTimeout(() => r(new Error('timeout ' + etq)), ms))
+]);
+/* extrai um CPF válido da imagem do documento; devolve só os 11 dígitos ou null */
+async function extrairCPF(fileImagem){
+  let worker = null;
+  try {
+    const T = await _comTimeout(carregarOCR(), 25000, 'carregar');
+    worker = await T.createWorker('eng');
+    await worker.setParameters({ tessedit_char_whitelist: '0123456789.-/ ' });
+    const { data:{ text } } = await _comTimeout(worker.recognize(fileImagem), 22000, 'ocr');
+    const blocos = (text.match(/\d[\d.\-\/ ]{9,}\d/g) || []).map(s => s.replace(/\D/g, ''));
+    for (const seq of blocos){
+      for (let i = 0; i + 11 <= seq.length; i++){
+        const c = seq.slice(i, i + 11);
+        if (validarCPF(c)) return c;
+      }
+    }
+    return null;
+  } catch(e){ return null; }
+  finally { if (worker){ try { await worker.terminate(); } catch(_){} } }
+}
+/* confere o CPF do documento contra o informado (não bloqueia o fluxo) */
+async function conferirDocumento(p, arqs){
+  if (!p.ocr || !p.ocr.cpf) return;
+  const img = arqs.find(a => a.type && a.type.startsWith('image/'));
+  if (!img) return;
+  const informado = so(estado.dados.cpf || candidato.cpf || '');
+  if (!informado) return;
+  const aviso = bolhaBot('Deixa eu conferir esse documento rapidinho… 🔎');
+  const cpfDoc = await extrairCPF(img);
+  aviso.remove();
+  if (!cpfDoc) return;                       /* não achou — segue sem falar nada */
+  if (cpfDoc === informado){
+    await falarBot('Conferi o <b>CPF</b> no documento e bate certinho com o que você me passou. ✅');
+  } else {
+    await falarBot(`No documento eu li o CPF <b>${MASCARAS.cpf(cpfDoc)}</b>, um pouco diferente do que você digitou (${MASCARAS.cpf(informado)}). Se algum estiver errado, dá pra ajustar na conferência do final. 😉`);
+  }
+}
+
 /* ── Composer: upload ─────────────────────────────── */
 function comporUpload(p){
+  if (p.ocr) carregarOCR().catch(() => {});   /* pré-aquece o OCR enquanto a pessoa tira a foto */
   elComp.innerHTML = `
     ${p.dica ? `<p class="dica">${p.dica}</p>` : ''}
     <div id="erro-arq"></div>
@@ -1490,6 +1550,7 @@ function comporUpload(p){
     estado.arquivos[p.doc] = { pulado:false, rotulo:p.rotulo, itens };
     elComp.innerHTML = '';
     await espera(300);
+    await conferirDocumento(p, arqs);          /* OCR: confere o CPF do documento */
     const msg = typeof p.recebido === 'function' ? p.recebido()
               : (p.recebido || 'Recebido!');
     if (msg) await falarBot(msg);
