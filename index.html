@@ -1582,7 +1582,10 @@ const escapar = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;',
    a confirmação antes de iniciar o cadastro. */
 async function comporProposta(p){
   await falarBot('Antes de começar o seu cadastro, dá uma olhada na sua <b>proposta</b>, combinado?');
-  const texto = escapar(String(candidato.proposta || '').trim()).replace(/\n/g, '<br>');
+  /* o texto vem de montarProposta() com *negrito* estilo WhatsApp e quebras de linha */
+  const texto = escapar(String(candidato.proposta || '').trim())
+    .replace(/\*([^*]+)\*/g, '<b>$1</b>')
+    .replace(/\n/g, '<br>');
   const linha = document.createElement('div');
   linha.className = 'linha-proposta';
   linha.innerHTML = `<div class="proposta">
@@ -1599,6 +1602,7 @@ async function comporProposta(p){
   ], async (o) => {
     bolhaUser(o.label);
     estado.dados.proposta_ok = o.v;
+    estado.dados.proposta = candidato.proposta || '';   /* guarda o texto montado p/ gravar no aceite */
     await espera(230);
     if (o.v === 'sim'){
       await falarBot('Perfeito! Proposta confirmada. ✅');
@@ -1777,16 +1781,76 @@ function reiniciar(){
    (Edge Function admissao-acesso). Aqui o final é fixo pra demonstrar. */
 const DEMO_CPF4 = '1234';
 const DEMO_NOME = 'Maria Aparecida da Silva';   // simulação: no ar, o nome vem da validação
-/* proposta = "cópia e cola" da vaga vinculada ao candidato no recrutamento.
-   No ar, vem do backend (r.proposta). Aqui é um exemplo pra simulação. */
-const DEMO_PROPOSTA = `Cargo: Atendente de Restaurante
-Unidade: Tatá Sushi — Shopping Metrô Santa Cruz
-Salário: R$ 1.850,00 por mês
-Jornada: 44h semanais — escala 6x1
-Horário: 15h às 23h (folga às segundas)
-Benefícios: Vale-transporte, refeição no local e plano odontológico
-Início previsto: a combinar com o gestor`;
 const MAX_TENTATIVAS = 5;
+
+/* ── Montagem da proposta (mesma lógica do recrutamento) ──────────
+   A Sara monta a proposta na hora a partir dos campos da VAGA.
+   No ar, o backend (admissao_acesso) devolve o objeto `vaga` com:
+   cargo, escala, unidade, horario, salario_fixo, salario_bruto,
+   beneficios, observacao.  Aqui chamamos montarProposta(vaga). */
+const ENDERECO_UNIDADE = {
+  'itaim':                'Rua João Cachoeira, 278 - Itaim Bibi',
+  'administrativo':       'Avenida 9 de Julho, 5593',
+  'poke - pinheiros':     'Rua Tucambira, 212 - Pinheiros',
+  'poke pinheiros':       'Rua Tucambira, 212 - Pinheiros',
+  'pinheiros':            'Avenida Brigadeiro Faria Lima, 120 - Pinheiros',
+  'tata house':           '',
+  'tata house pinheiros': '',
+};
+function enderecoUnidade(u){
+  if (!u) return '';
+  const k = u.toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+  return ENDERECO_UNIDADE.hasOwnProperty(k) ? ENDERECO_UNIDADE[k] : '';
+}
+/* separa da observacao as linhas "Contrato:" e "Intervalo:" do texto livre */
+function parseVagaObs(str){
+  const lines = String(str || '').split('\n');
+  let contratos = [], intervalo = '', livre = [];
+  lines.forEach(ln => {
+    const mc = ln.match(/^\s*Contrato:\s*(.+)$/i);
+    const mi = ln.match(/^\s*Intervalo:\s*(.+)$/i);
+    if (mc)      contratos = mc[1].split(',').map(s => s.trim()).filter(Boolean);
+    else if (mi) intervalo = mi[1].trim();
+    else if (ln.trim()) livre.push(ln.trim());
+  });
+  return { contratos, intervalo, livre: livre.join('\n') };
+}
+const fmtRS = v => (v == null || v === '') ? '' : 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
+
+/* MONTA A PROPOSTA — mesma ordem do recrutamento.
+   (No recrutamento a remuneração só aparece pra quem pode ver valores;
+    pra Sara mostrar ao candidato, sempre mostramos.) */
+function montarProposta(v){
+  if (!v) return '';
+  const pv = parseVagaObs(v.observacao), L = [];
+  L.push('*' + (v.cargo || '') + '*');
+  if (v.escala) L.push('Escala: ' + v.escala);
+  const end = enderecoUnidade(v.unidade);
+  if (end) L.push('Endereço: ' + end);                                    /* [reconstruído — rótulo cortado no print] */
+  if (v.horario){
+    let h = 'Horário: ' + v.horario;
+    if (pv.intervalo) h += ' — Intervalo: ' + pv.intervalo;               /* [reconstruído — cortado no print] */
+    L.push(h);
+  }
+  if (v.salario_fixo != null){
+    let s = 'Remuneração: Salário fixo de ' + fmtRS(v.salario_fixo);      /* [reconstruído — "Salário…" cortado] */
+    if (v.salario_bruto != null) s += ' + prêmio e/ou gorjetas';          /* [reconstruído — cortado no print] */
+    s += '.';
+    L.push(s);
+  }
+  if (v.beneficios) L.push('Benefícios: ' + v.beneficios);
+  if (pv.contratos.length) L.push('Contrato: ' + pv.contratos.join(', '));
+  if (pv.livre) L.push('Observações: ' + pv.livre);
+  return L.join('\n');
+}
+
+/* vaga de exemplo pra simulação (no ar vem do backend) */
+const DEMO_VAGA = {
+  cargo:'Atendente de Restaurante', escala:'6x1', unidade:'Itaim',
+  horario:'15h às 23h', salario_fixo:1850, salario_bruto:2300,
+  beneficios:'Vale-transporte, refeição no local e plano odontológico',
+  observacao:'Contrato: CLT\nIntervalo: 1h\nFolga às segundas-feiras',
+};
 let tentativasGate = 0;
 
 /* modo real: link pessoal com ?t=<token>. Sem token, roda o demo acima. */
@@ -1844,7 +1908,7 @@ async function validarGate(){
 
   /* ── demo (sem token no link) ── */
   if (!MODO_REAL){
-    if (v === DEMO_CPF4){ candidato.proposta = DEMO_PROPOSTA; sucessoGate(DEMO_NOME); return; }
+    if (v === DEMO_CPF4){ candidato.vaga = DEMO_VAGA; candidato.proposta = montarProposta(DEMO_VAGA); sucessoGate(DEMO_NOME); return; }
     tentativasGate++;
     tremerPin();
     if (tentativasGate >= MAX_TENTATIVAS){
@@ -1877,7 +1941,9 @@ async function validarGate(){
     candidato.unidade = r.unidade || '';
     candidato.telefone = r.contato || '';
     candidato.cpf = r.cpf || '';
-    candidato.proposta = r.proposta || '';   // "cópia e cola" da vaga no recrutamento
+    /* proposta montada na hora a partir da vaga (join admissoes→rec_candidaturas→vagas) */
+    candidato.vaga = r.vaga || null;
+    candidato.proposta = candidato.vaga ? montarProposta(candidato.vaga) : (r.proposta || '');
     sucessoGate(r.nome);
     return;
   }
