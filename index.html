@@ -1319,6 +1319,7 @@ function avancar(){
   } else {
     estado.i++;
   }
+  salvarLocal();
   rodar();
 }
 
@@ -1586,6 +1587,35 @@ function comporUpload(p){
 const tamanho = b => b < 1024*1024 ? `${Math.max(1, Math.round(b/1024))} KB` : `${(b/1048576).toFixed(1)} MB`;
 const escapar = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
+/* ── Rascunho local (continuar de onde parou) ──────────
+   Salva o progresso no navegador (por token). Documentos já estão no
+   Storage — aqui guardamos só a referência (bucket/path), sem os arquivos. */
+const LS_VER = 1;
+const _lsKey = () => 'tp_admissao_' + (TOKEN || 'demo');
+function salvarLocal(){
+  try {
+    if (estado.protocolo) return;                 /* já enviado: não guarda rascunho */
+    const arqs = {};
+    Object.entries(estado.arquivos || {}).forEach(([k, a]) => {
+      arqs[k] = { pulado:a.pulado, rotulo:a.rotulo,
+        itens:(a.itens || []).map(i => ({ nome:i.nome, tamanho:i.tamanho, tipo:i.tipo,
+          bucket:i.bucket || null, path:i.path || null, enviado:i.enviado === true })) };
+    });
+    localStorage.setItem(_lsKey(), JSON.stringify({ v:LS_VER, i:estado.i, dados:estado.dados, arquivos:arqs, ts:Date.now() }));
+  } catch(e){}
+}
+function carregarLocal(){
+  try { const s = JSON.parse(localStorage.getItem(_lsKey()) || 'null'); return (s && s.v === LS_VER) ? s : null; }
+  catch(e){ return null; }
+}
+function limparLocal(){ try { localStorage.removeItem(_lsKey()); } catch(e){} }
+function temProgresso(s){
+  return !!s && ((s.i | 0) > 0) && (
+    Object.keys(s.dados || {}).some(k => k !== '_inicio') ||
+    Object.keys(s.arquivos || {}).length > 0
+  );
+}
+
 /* ── Upload de documentos pro Storage (signed URL) ─────
    Só no link real. Pede uma signed upload URL (Edge admissao-doc-url,
    validando token+CPF) e sobe o arquivo direto pro bucket. Anota
@@ -1771,6 +1801,7 @@ async function concluir(){
   }
   if (!estado.protocolo)
     estado.protocolo = 'ADM-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000);
+  limparLocal();   /* finalizado: descarta o rascunho local */
 
   await falarBot(`Show, ${escapar(primeiro)}!<br>Sua ficha de admissão foi enviada. 🎉<br>Agora, é só aguardar as instruções da área de <b>Gente & Gestão</b>.<br><br>Seja muito bem-vindo(a) ao time do Tatá! 🍣`);
 
@@ -1852,6 +1883,7 @@ $('#copiar-json').addEventListener('click', async e => {
 
 function reiniciar(){
   pararVoz();
+  limparLocal();
   Object.values(estado.arquivos).forEach(a => a.itens.forEach(i => i.url && URL.revokeObjectURL(i.url)));
   estado = { i:0, dados:{}, arquivos:{}, retorno:null, protocolo:null };
   candidato = { nome: '' };
@@ -1946,7 +1978,35 @@ const gateInputs = [...gateEl.querySelectorAll('#gate-pin input')];
 const gatePin    = $('#gate-pin');
 const gateMsg    = $('#gate-msg');
 
-function comecarFluxo(){ atualizarProgresso(null); rodar(); }
+function comecarFluxo(){
+  atualizarProgresso(null);
+  const salvo = carregarLocal();
+  if (temProgresso(salvo)) return retomarOuRecomecar(salvo);
+  rodar();
+}
+
+async function retomarOuRecomecar(salvo){
+  await falarBot(`Oi de novo${primeiroNome() ? ', ' + primeiroNome() : ''}! 👋<br>Vi que você já tinha começado seu cadastro. Quer continuar de onde parou?`);
+  chipsInline([
+    { v:'continuar', label:'Continuar de onde parei', principal:true },
+    { v:'recomecar', label:'Começar de novo' }
+  ], async (o) => {
+    bolhaUser(o.label);
+    await espera(220);
+    if (o.v === 'continuar'){
+      estado.dados = salvo.dados || {};
+      estado.arquivos = salvo.arquivos || {};
+      estado.i = Math.min(salvo.i | 0, visiveis().length);
+      salvarLocal();
+      await falarBot('Show! Vamos continuar de onde paramos. 👇');
+      rodar();
+    } else {
+      limparLocal();
+      estado = { i:0, dados:{}, arquivos:{}, retorno:null, protocolo:null };
+      rodar();
+    }
+  }, 'Continuar?');
+}
 
 function mostrarGate(){
   tentativasGate = 0;
