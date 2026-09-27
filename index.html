@@ -281,6 +281,17 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
   display:block; font-size:9px; letter-spacing:.18em; margin-bottom:5px; color:rgb(var(--muted-2));
 }
 
+/* card da proposta (cópia e cola da vaga) */
+.linha-proposta{ margin:2px 0 12px; animation:surge .32s ease both; }
+.proposta{ border:1px solid var(--line); border-radius:var(--raio-card); overflow:hidden; background:rgb(var(--surface)); }
+.proposta-topo{
+  display:flex; align-items:center; gap:8px; padding:12px 15px;
+  background:var(--accent-soft); color:rgb(var(--accent-dim));
+  font:600 14px Inter,sans-serif;
+}
+.proposta-topo svg{ width:17px; height:17px; flex:0 0 auto; }
+.proposta-corpo{ padding:14px 16px; font-size:14px; line-height:1.7; color:rgb(var(--text)); }
+
 /* ══════════════════════════════════════════════════════════════
    COMPOSER — ocupa o lugar da BottomNav do app
    ══════════════════════════════════════════════════════════════ */
@@ -621,6 +632,10 @@ const ROTEIRO = [
       'Já abri o <b>WhatsApp do RH</b> pra você tirar sua dúvida! Se não abrir aí, é só chamar no <b>(11) 91362-5960</b>.',
       'Mas os documentos você já pode ir mandando por aqui — assim adiantamos tudo. Vamos nessa!'
     ]},
+
+  /* Validação da proposta (vem do "cópia e cola" da vaga no recrutamento) */
+  { id:'proposta', tipo:'proposta', grupo:'Boas-vindas', campo:'proposta_ok', rotulo:'Proposta', ocultarRevisao:true,
+    condicao:() => !!(candidato.proposta && String(candidato.proposta).trim()) },
 
   /* ── Dados pessoais ─────────────────────────────── */
   { id:'nome', tipo:'texto', grupo:'Dados pessoais', campo:'nome', rotulo:'Nome completo',
@@ -1198,6 +1213,7 @@ async function rodar(){
   if (passo.tipo === 'cidade')  return comporCidade(passo);
   if (passo.tipo === 'opcoes')  return comporOpcoes(passo);
   if (passo.tipo === 'upload')  return comporUpload(passo);
+  if (passo.tipo === 'proposta')return comporProposta(passo);
   if (passo.tipo === 'revisao') return comporRevisao(passo);
 }
 
@@ -1561,6 +1577,44 @@ function comporUpload(p){
 const tamanho = b => b < 1024*1024 ? `${Math.max(1, Math.round(b/1024))} KB` : `${(b/1048576).toFixed(1)} MB`;
 const escapar = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
+/* ── Composer: validação da proposta ──────────────────
+   Mostra o "cópia e cola" da vaga (candidato.proposta) num card e pede
+   a confirmação antes de iniciar o cadastro. */
+async function comporProposta(p){
+  await falarBot('Antes de começar o seu cadastro, dá uma olhada na sua <b>proposta</b>, combinado?');
+  const texto = escapar(String(candidato.proposta || '').trim()).replace(/\n/g, '<br>');
+  const linha = document.createElement('div');
+  linha.className = 'linha-proposta';
+  linha.innerHTML = `<div class="proposta">
+      <div class="proposta-topo">${ICO.arquivo}<span>Proposta de admissão</span></div>
+      <div class="proposta-corpo">${texto}</div>
+    </div>`;
+  elMsgs.appendChild(linha); rolar();
+  await espera(500);
+  await falarBot('Está tudo certo com a sua proposta?');
+
+  const perguntar = () => chipsInline([
+    { v:'sim',    label:'Sim, confirmo', principal:true },
+    { v:'duvida', label:'Não, tenho dúvidas', wa:true }
+  ], async (o) => {
+    bolhaUser(o.label);
+    estado.dados.proposta_ok = o.v;
+    await espera(230);
+    if (o.v === 'sim'){
+      await falarBot('Perfeito! Proposta confirmada. ✅');
+      avancar();
+    } else {
+      await falarBot('Sem problema! Já abri o <b>WhatsApp do RH</b> pra você tirar suas dúvidas sobre a proposta. Se não abrir aí, é só chamar no <b>(11) 91362-5960</b>.');
+      chipsInline([{ v:'ok', label:'Já resolvi, podemos seguir', principal:true }], async () => {
+        estado.dados.proposta_ok = 'sim';
+        await espera(150);
+        avancar();
+      }, p.rotulo);
+    }
+  }, p.rotulo);
+  perguntar();
+}
+
 /* ── Composer: revisão ────────────────────────────── */
 async function comporRevisao(){
   elMsgs.querySelectorAll('.rev-confirm').forEach(e => e.remove());  /* evita empilhar o botão ao editar */
@@ -1723,6 +1777,15 @@ function reiniciar(){
    (Edge Function admissao-acesso). Aqui o final é fixo pra demonstrar. */
 const DEMO_CPF4 = '1234';
 const DEMO_NOME = 'Maria Aparecida da Silva';   // simulação: no ar, o nome vem da validação
+/* proposta = "cópia e cola" da vaga vinculada ao candidato no recrutamento.
+   No ar, vem do backend (r.proposta). Aqui é um exemplo pra simulação. */
+const DEMO_PROPOSTA = `Cargo: Atendente de Restaurante
+Unidade: Tatá Sushi — Shopping Metrô Santa Cruz
+Salário: R$ 1.850,00 por mês
+Jornada: 44h semanais — escala 6x1
+Horário: 15h às 23h (folga às segundas)
+Benefícios: Vale-transporte, refeição no local e plano odontológico
+Início previsto: a combinar com o gestor`;
 const MAX_TENTATIVAS = 5;
 let tentativasGate = 0;
 
@@ -1781,7 +1844,7 @@ async function validarGate(){
 
   /* ── demo (sem token no link) ── */
   if (!MODO_REAL){
-    if (v === DEMO_CPF4){ sucessoGate(DEMO_NOME); return; }
+    if (v === DEMO_CPF4){ candidato.proposta = DEMO_PROPOSTA; sucessoGate(DEMO_NOME); return; }
     tentativasGate++;
     tremerPin();
     if (tentativasGate >= MAX_TENTATIVAS){
@@ -1814,6 +1877,7 @@ async function validarGate(){
     candidato.unidade = r.unidade || '';
     candidato.telefone = r.contato || '';
     candidato.cpf = r.cpf || '';
+    candidato.proposta = r.proposta || '';   // "cópia e cola" da vaga no recrutamento
     sucessoGate(r.nome);
     return;
   }
