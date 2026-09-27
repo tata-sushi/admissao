@@ -1744,8 +1744,33 @@ async function concluir(){
     .filter(p => !estado.arquivos[p.doc] || estado.arquivos[p.doc].pulado)
     .map(p => p.rotulo);
 
-  estado.protocolo = 'ADM-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000);
   const primeiro = (estado.dados.nome_social || estado.dados.nome || '').split(' ')[0];
+
+  /* envia pro backend (grava respostas + documentos) e usa o protocolo real */
+  estado.protocolo = null;
+  if (MODO_REAL && TOKEN){
+    const pl = payload();
+    const enviando = bolhaBot('Enviando sua ficha para o RH… 📨');
+    let salvou = false;
+    try {
+      const r = await fetch(API_ENVIAR, {
+        method:'POST', headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ token:TOKEN, cpf4:so(candidato.cpf || '').slice(0, 4),
+          dados:pl.candidato, proposta:pl.proposta, documentos:pl.documentos })
+      }).then(r => r.json());
+      if (r && r.ok && r.protocolo){ estado.protocolo = r.protocolo; salvou = true; }
+      else if (r && r.motivo === 'ja_enviado'){ salvou = true; }   /* já estava salvo */
+    } catch(e){ /* rede: cai no retry abaixo */ }
+    enviando.remove();
+    if (!salvou){
+      await falarBot('Ops, não consegui enviar sua ficha agora. Pode tentar de novo?');
+      elComp.innerHTML = `<div class="chips"><button class="chip principal" id="reenviar">Tentar enviar de novo</button></div>`;
+      $('#reenviar').addEventListener('click', () => { elComp.innerHTML = ''; concluir(); });
+      return;
+    }
+  }
+  if (!estado.protocolo)
+    estado.protocolo = 'ADM-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000);
 
   await falarBot(`Show, ${escapar(primeiro)}!<br>Sua ficha de admissão foi enviada. 🎉<br>Agora, é só aguardar as instruções da área de <b>Gente & Gestão</b>.<br><br>Seja muito bem-vindo(a) ao time do Tatá! 🍣`);
 
@@ -1911,6 +1936,7 @@ let tentativasGate = 0;
 /* modo real: link pessoal com ?t=<token>. Sem token, roda o demo acima. */
 const API_ACESSO = 'https://aoqsbusfrffapjglpqjk.supabase.co/functions/v1/admissao-acesso';
 const API_DOC_URL = 'https://aoqsbusfrffapjglpqjk.supabase.co/functions/v1/admissao-doc-url';
+const API_ENVIAR  = 'https://aoqsbusfrffapjglpqjk.supabase.co/functions/v1/admissao-enviar';
 const TOKEN = new URLSearchParams(location.search).get('t') || '';
 const MODO_REAL = !!TOKEN;
 let gateOcupado = false;
