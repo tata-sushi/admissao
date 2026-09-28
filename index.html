@@ -788,12 +788,12 @@ const ROTEIRO = [
     opcoes:[{v:'corrente',label:'Corrente'},{v:'salario',label:'Salário'}] },
   { id:'agencia', tipo:'texto', grupo:'Dados bancários', campo:'agencia', rotulo:'Agência',
     condicao:d => d.conta_itau === 'sim',
-    pergunta:'OK! Qual o número da <b>agência</b> (com dígito, se tiver)?', placeholder:'Ex.: 0001', teclado:'numeric',
+    pergunta:'OK! Qual o número da <b>agência</b> (com dígito, se tiver)?', placeholder:'Ex.: 0001', mascara:'banco', teclado:'numeric',
     validar:v => so(v).length >= 3 || 'A agência tem pelo menos 3 números.' },
   { id:'conta', tipo:'texto', grupo:'Dados bancários', campo:'conta', rotulo:'Conta com dígito',
     condicao:d => d.conta_itau === 'sim',
     pergunta:() => { const t = {corrente:'corrente', salario:'salário', poupanca:'poupança'}[estado.dados.tipo_conta] || ''; return `E o número da <b>conta ${t}</b> (com dígito, se tiver)?`; },
-    placeholder:'Ex.: 12345678-9',
+    placeholder:'Ex.: 12345678-9', mascara:'banco', teclado:'numeric',
     validar:v => so(v).length >= 4 || 'Confere o número da conta, por favor.' },
 
   /* ── Documentos ─────────────────────────────────── */
@@ -1071,7 +1071,8 @@ const MASCARAS = {
     if (!n) return '';
     const val = (parseInt(n, 10) / 100).toFixed(2);
     return 'R$ ' + val.replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  }
+  },
+  banco: v => (v || '').replace(/[^0-9-]/g, '').slice(0, 20)   /* agência/conta: só números e "-" */
 };
 
 /* ── Validações ───────────────────────────────────── */
