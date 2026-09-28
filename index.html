@@ -671,13 +671,11 @@ const ROTEIRO = [
     placeholder:'000.000.000-00', mascara:'cpf', teclado:'numeric',
     validar:v => validarCPF(v) || 'Esse CPF não confere. Pode conferir e mandar de novo?' },
 
-  { id:'rg_tipo', tipo:'opcoes', grupo:'Dados pessoais', campo:'rg_tipo', rotulo:'Documento de identidade',
-    pergunta:'Anotado! Qual o seu <b>documento de identidade</b>?', tituloOpcoes:'Documento',
-    dica:'Se você é estrangeiro(a), escolha RNE.',
-    opcoes:[{v:'rg',label:'RG'},{v:'ric',label:'RIC'},{v:'rne',label:'RNE (estrangeiro)'}] },
-  { id:'rg_numero', tipo:'texto', grupo:'Dados pessoais', campo:'rg_numero', rotulo:'Nº do documento',
-    pergunta:() => { const t = { rg:'RG', ric:'RIC', rne:'RNE' }[estado.dados.rg_tipo] || 'documento'; return `E qual o número do seu <b>${t}</b>?`; },
-    placeholder:'Número do documento',
+  { id:'estrangeiro', tipo:'opcoes', grupo:'Dados pessoais', campo:'estrangeiro', rotulo:'Estrangeiro(a)',
+    pergunta:'Anotado! Você é <b>estrangeiro(a)</b>?', tituloOpcoes:'É estrangeiro(a)?',
+    opcoes:[{v:'nao',label:'Não'},{v:'sim',label:'Sim'}] },
+  { id:'rg_numero', tipo:'texto', grupo:'Dados pessoais', campo:'rg_numero', rotulo:'Documento de identidade',
+    pergunta:'Qual o seu <b>documento de identidade (RG, RIC ou RNE)</b>?', placeholder:'Número do documento',
     validar:v => v.trim().length >= 4 || 'Confere o número, por favor.' },
 
   { id:'sexo', tipo:'opcoes', grupo:'Dados pessoais', campo:'sexo', rotulo:'Sexo',
@@ -698,7 +696,7 @@ const ROTEIRO = [
 
   { id:'consta_pai', tipo:'opcoes', grupo:'Dados pessoais', campo:'consta_pai', rotulo:'Consta nome do pai', ocultarRevisao:true,
     pergunta:'No seu <b>RG</b> consta o <b>nome do seu pai</b>?', tituloOpcoes:'Consta o pai?',
-    opcoes:[{v:'sim',label:'Sim, consta'},{v:'nao',label:'Não consta'}] },
+    opcoes:[{v:'sim',label:'Sim, consta'},{v:'nao',label:'Não consta', set:{ nome_pai:'Não consta' }}] },
   { id:'nome_pai', tipo:'texto', grupo:'Dados pessoais', campo:'nome_pai', rotulo:'Nome do pai',
     condicao:d => d.consta_pai === 'sim',
     pergunta:'Qual o <b>nome completo do seu pai</b>?', placeholder:'Ex.: José Carlos da Silva',
@@ -716,9 +714,9 @@ const ROTEIRO = [
     validar:v => v.trim().length >= 3 || 'Me passa o número da CTPS, por favor.' },
 
   { id:'pis_numero', tipo:'texto', grupo:'Dados pessoais', campo:'pis_numero', rotulo:'PIS/NIS',
-    pergunta:'E o número do seu <b>PIS/PASEP (NIS)</b>?<br><span class="obs">Fica na CTPS Digital ou no app da Caixa. Se não souber agora, pode pular — te explico como emitir na hora de anexar.</span>',
+    pergunta:'E o número do seu <b>PIS/PASEP (NIS)</b>?<br>Você consegue no site <span class="grifo">cidadao.caixa.gov.br → Acesse o Portal → login com CPF → Meu NIS → Sobre meu NIS</span>.<br>Se não tiver, me fale!',
     placeholder:'000.00000.00-0', mascara:'pis', teclado:'numeric',
-    opcional:true, textoPular:'Não sei meu número agora',
+    opcional:true, textoPular:'Não tenho PIS, é meu primeiro emprego',
     validar:v => so(v).length === 11 || 'O PIS/NIS tem 11 números.' },
 
   { id:'nascimento', tipo:'data', grupo:'Dados pessoais', campo:'nascimento', rotulo:'Data de nascimento',
@@ -738,15 +736,13 @@ const ROTEIRO = [
       {v:'nao_informar',label:'Prefiro não informar'}] },
 
   /* Certificado de reservista — só para quem tem "Masculino" no documento */
-  { id:'reservista_intro', tipo:'fala', grupo:'Dados pessoais', condicao:d => d.sexo === 'M', ocultarRevisao:true,
-    falas:[ 'Como consta <b>masculino</b> no seu documento, vou anotar os dados do seu <b>certificado de reservista</b>. 🪖' ] },
   { id:'reservista_ra', tipo:'texto', grupo:'Dados pessoais', campo:'reservista_ra', rotulo:'Reservista — R.A', condicao:d => d.sexo === 'M',
     pergunta:'Qual o <b>R.A</b> (número) do seu certificado de reservista?', placeholder:'Ex.: 123456789', teclado:'numeric',
     validar:v => v.trim().length >= 3 || 'Confere o R.A, por favor.' },
   { id:'reservista_expedicao', tipo:'data', grupo:'Dados pessoais', campo:'reservista_expedicao', rotulo:'Reservista — Data de expedição', condicao:d => d.sexo === 'M',
     pergunta:'Qual a <b>data de expedição</b> do certificado?' },
   { id:'reservista_uf', tipo:'opcoes', grupo:'Dados pessoais', campo:'reservista_uf', rotulo:'Reservista — UF', condicao:d => d.sexo === 'M',
-    pergunta:'Qual a <b>UF</b> do documento?', dica:'Se o documento não tiver, informe o estado onde foi emitido.',
+    pergunta:'Qual <b>estado de emissão</b> do documento?',
     tituloOpcoes:'UF', grade:true, colunas:4,
     opcoes:UFS.map(u => ({ v:u, label:u })) },
   { id:'reservista_tipo', tipo:'opcoes', grupo:'Dados pessoais', campo:'reservista_tipo', rotulo:'Reservista — Tipo de documento', condicao:d => d.sexo === 'M',
@@ -821,9 +817,9 @@ const ROTEIRO = [
   /* ── Trabalho e uniforme ────────────────────────── */
   { id:'escolaridade', tipo:'opcoes', grupo:'Trabalho e uniforme', campo:'escolaridade', rotulo:'Escolaridade',
     pergunta:'Parabéns!!!<br>Já preenchemos bastante coisa.<br>Agora, vamos para a sua formação. Qual sua <b>escolaridade</b>?',
-    opcoes:[{v:'fund_inc',label:'Fundamental incompleto'},{v:'fund',label:'Fundamental completo'},
-            {v:'medio_inc',label:'Médio incompleto'},{v:'medio',label:'Médio completo'},
-            {v:'sup_inc',label:'Superior incompleto'},{v:'sup',label:'Superior completo'}] },
+    opcoes:[{v:'Fundamental incompleto',label:'Fundamental incompleto'},{v:'Fundamental completo',label:'Fundamental completo'},
+            {v:'Médio incompleto',label:'Médio incompleto'},{v:'Médio completo',label:'Médio completo'},
+            {v:'Superior incompleto',label:'Superior incompleto'},{v:'Superior completo',label:'Superior completo'}] },
 
   { id:'camiseta', tipo:'opcoes', grupo:'Trabalho e uniforme', campo:'tam_camiseta', rotulo:'Tamanho da camiseta',
     pergunta:() => `${primeiroNome() ? primeiroNome() + ', chegou' : 'Chegou'} a hora de preparar o seu uniforme!<br>Qual o tamanho da sua <b>camiseta</b>?`,
@@ -896,10 +892,9 @@ const ROTEIRO = [
     recebido:'Recebido! Agora, me mande o PDF ou foto da <b>Carteira de Trabalho</b> física ou digital.<br>Você consegue baixando o app <span class="grifo">Carteira de Trabalho Digital → Contratos → Compartilhar</span>.' },
 
   { id:'doc_ctps', tipo:'upload', grupo:'Documentos', doc:'ctps', rotulo:'Carteira de Trabalho digital',
-    recebido:'Recebido! Agora, uma foto ou print do seu <b>PIS/PASEP (NIS)</b>.' },
+    recebido:'Recebido! Agora, uma foto ou print do seu <b>PIS/PASEP (NIS)</b>.<br>Você consegue no site <span class="grifo">cidadao.caixa.gov.br → Acesse o Portal → login com CPF → Meu NIS → Sobre meu NIS</span> e tirando um print do <b>Número de Identificação Social</b>.<br>Se não tiver, me fale!' },
 
   { id:'doc_pis', tipo:'upload', grupo:'Documentos', doc:'pis_doc', rotulo:'Documento do PIS/NIS',
-    dica:'Não tem em mãos? Veja como emitir:<br>1. Acesse <b>cidadao.caixa.gov.br</b> e clique em <b>Acesse o Portal</b>.<br>2. Entre com seu <b>CPF</b> (ou clique em Cadastre-se).<br>3. Abra o card <b>Meu NIS</b> → <b>Sobre meu NIS</b>.<br>4. Tire um print do <b>Número de Identificação Social</b> e anexe aqui.',
     opcional:true, textoPular:'Vou emitir e anexar depois',
     recebido:() => `Recebido! ${primeiroNome() ? primeiroNome() + ', agora' : 'Agora'} o seu <b>comprovante de escolaridade</b> (pode ser histórico escolar ou certificado de conclusão).` },
 
@@ -1557,6 +1552,7 @@ async function comporOpcoes(p){
   chipsInline(p.opcoes, async (o) => {
     bolhaUser(o.label);
     estado.dados[p.campo] = o.v;
+    if (o.set) Object.assign(estado.dados, o.set);   /* grava campos extras da opção */
     await espera(230);
 
     if (p.id === 'termo' && o.v === 'depois'){
