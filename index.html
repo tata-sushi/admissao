@@ -1989,7 +1989,7 @@ function gateEncerrado(titulo, texto){
   $('#gate-form').style.display = 'none';
   const bl = $('#gate-bloqueado');
   bl.style.display = '';
-  bl.querySelector('h1').textContent = titulo;
+  bl.querySelector('h1').innerHTML = titulo;
   bl.querySelector('.gate-sub').innerHTML = texto;
   const btn = $('#gate-recomecar');
   if (btn) btn.style.display = MODO_REAL ? 'none' : '';
@@ -2062,7 +2062,7 @@ async function validarGate(){
       gateEncerrado('Link expirado', 'Este link valia por 48 horas e já expirou. Fale com o RH do Tatá para receber um novo.');
       break;
     case 'ja_enviado':
-      gateEncerrado('Tudo enviado 🎉', 'Seus dados e documentos já foram enviados. O RH vai te chamar se precisar de mais alguma coisa.');
+      gateEncerrado('Parabéns 🎉<br>Cadastro preenchido', 'As informações que você preencheu já estão em processamento. Caso tenha alguma divergência ou documento faltando, nosso pessoal entrará em contato com você.');
       break;
     case 'nao_encontrado':
     case 'sem_token':
