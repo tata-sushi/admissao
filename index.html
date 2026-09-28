@@ -671,9 +671,14 @@ const ROTEIRO = [
     placeholder:'000.000.000-00', mascara:'cpf', teclado:'numeric',
     validar:v => validarCPF(v) || 'Esse CPF não confere. Pode conferir e mandar de novo?' },
 
-  { id:'rg_numero', tipo:'texto', grupo:'Dados pessoais', campo:'rg_numero', rotulo:'RG',
-    pergunta:'Anotado! Agora, qual o número do seu <b>RG</b>?', placeholder:'00.000.000-0',
-    validar:v => so(v).length >= 5 || 'Confere o número do RG, por favor.' },
+  { id:'rg_tipo', tipo:'opcoes', grupo:'Dados pessoais', campo:'rg_tipo', rotulo:'Documento de identidade',
+    pergunta:'Anotado! Qual o seu <b>documento de identidade</b>?', tituloOpcoes:'Documento',
+    dica:'Se você é estrangeiro(a), escolha RNE.',
+    opcoes:[{v:'rg',label:'RG'},{v:'ric',label:'RIC'},{v:'rne',label:'RNE (estrangeiro)'}] },
+  { id:'rg_numero', tipo:'texto', grupo:'Dados pessoais', campo:'rg_numero', rotulo:'Nº do documento',
+    pergunta:() => { const t = { rg:'RG', ric:'RIC', rne:'RNE' }[estado.dados.rg_tipo] || 'documento'; return `E qual o número do seu <b>${t}</b>?`; },
+    placeholder:'Número do documento',
+    validar:v => v.trim().length >= 4 || 'Confere o número, por favor.' },
 
   { id:'sexo', tipo:'opcoes', grupo:'Dados pessoais', campo:'sexo', rotulo:'Sexo',
     pergunta:'Qual <b>sexo</b> consta no seu documento?', tituloOpcoes:'Sexo',
@@ -709,6 +714,12 @@ const ROTEIRO = [
   { id:'ctps_numero', tipo:'texto', grupo:'Dados pessoais', campo:'ctps_numero', rotulo:'CTPS (nº)',
     pergunta:'Perfeito! E o número da sua <b>Carteira de Trabalho (CTPS)</b>?', placeholder:'0000000 série 000',
     validar:v => v.trim().length >= 3 || 'Me passa o número da CTPS, por favor.' },
+
+  { id:'pis_numero', tipo:'texto', grupo:'Dados pessoais', campo:'pis_numero', rotulo:'PIS/NIS',
+    pergunta:'E o número do seu <b>PIS/PASEP (NIS)</b>?<br><span class="obs">Fica na CTPS Digital ou no app da Caixa. Se não souber agora, pode pular — te explico como emitir na hora de anexar.</span>',
+    placeholder:'000.00000.00-0', mascara:'pis', teclado:'numeric',
+    opcional:true, textoPular:'Não sei meu número agora',
+    validar:v => so(v).length === 11 || 'O PIS/NIS tem 11 números.' },
 
   { id:'nascimento', tipo:'data', grupo:'Dados pessoais', campo:'nascimento', rotulo:'Data de nascimento',
     pergunta:'E qual sua <b>data de nascimento</b>?', minIdade:16,
@@ -885,6 +896,11 @@ const ROTEIRO = [
     recebido:'Recebido! Agora, me mande o PDF ou foto da <b>Carteira de Trabalho</b> física ou digital.<br>Você consegue baixando o app <span class="grifo">Carteira de Trabalho Digital → Contratos → Compartilhar</span>.' },
 
   { id:'doc_ctps', tipo:'upload', grupo:'Documentos', doc:'ctps', rotulo:'Carteira de Trabalho digital',
+    recebido:'Recebido! Agora, uma foto ou print do seu <b>PIS/PASEP (NIS)</b>.' },
+
+  { id:'doc_pis', tipo:'upload', grupo:'Documentos', doc:'pis_doc', rotulo:'Documento do PIS/NIS',
+    dica:'Não tem em mãos? Veja como emitir:<br>1. Acesse <b>cidadao.caixa.gov.br</b> e clique em <b>Acesse o Portal</b>.<br>2. Entre com seu <b>CPF</b> (ou clique em Cadastre-se).<br>3. Abra o card <b>Meu NIS</b> → <b>Sobre meu NIS</b>.<br>4. Tire um print do <b>Número de Identificação Social</b> e anexe aqui.',
+    opcional:true, textoPular:'Vou emitir e anexar depois',
     recebido:() => `Recebido! ${primeiroNome() ? primeiroNome() + ', agora' : 'Agora'} o seu <b>comprovante de escolaridade</b> (pode ser histórico escolar ou certificado de conclusão).` },
 
   { id:'doc_escolaridade', tipo:'upload', grupo:'Documentos', doc:'escolaridade_doc', rotulo:'Comprovante de escolaridade',
@@ -1154,7 +1170,12 @@ const MASCARAS = {
     const val = (parseInt(n, 10) / 100).toFixed(2);
     return 'R$ ' + val.replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   },
-  banco: v => (v || '').replace(/[^0-9-]/g, '').slice(0, 20)   /* agência/conta: só números e "-" */
+  banco: v => (v || '').replace(/[^0-9-]/g, '').slice(0, 20),   /* agência/conta: só números e "-" */
+  pis: v => { const n = so(v).slice(0,11); let r = n;   /* PIS/NIS: 000.00000.00-0 */
+    if (n.length > 3)  r = n.slice(0,3) + '.' + n.slice(3);
+    if (n.length > 8)  r = n.slice(0,3) + '.' + n.slice(3,8) + '.' + n.slice(8);
+    if (n.length > 10) r = n.slice(0,3) + '.' + n.slice(3,8) + '.' + n.slice(8,10) + '-' + n.slice(10);
+    return r; }
 };
 
 /* ── Validações ───────────────────────────────────── */
