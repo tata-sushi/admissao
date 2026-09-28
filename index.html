@@ -713,6 +713,10 @@ const ROTEIRO = [
     pergunta:'Perfeito! E o número da sua <b>Carteira de Trabalho (CTPS)</b>?', placeholder:'0000000 série 000',
     validar:v => v.trim().length >= 3 || 'Me passa o número da CTPS, por favor.' },
 
+  { id:'ctps_uf', tipo:'opcoes', grupo:'Dados pessoais', campo:'ctps_uf', rotulo:'UF de emissão da CTPS',
+    pergunta:'Qual a <b>UF de emissão</b> da sua CTPS?', tituloOpcoes:'UF da CTPS', grade:true, colunas:4,
+    opcoes:UFS.map(u => ({ v:u, label:u })) },
+
   { id:'pis_numero', tipo:'texto', grupo:'Dados pessoais', campo:'pis_numero', rotulo:'PIS/NIS',
     pergunta:'E o número do seu <b>PIS/PASEP (NIS)</b>?<br>Você consegue no site <span class="grifo">cidadao.caixa.gov.br → Acesse o Portal → login com CPF → Meu NIS → Sobre meu NIS</span>.<br>Se não tiver, me fale!',
     placeholder:'000.00000.00-0', mascara:'pis', teclado:'numeric',
@@ -722,6 +726,27 @@ const ROTEIRO = [
   { id:'nascimento', tipo:'data', grupo:'Dados pessoais', campo:'nascimento', rotulo:'Data de nascimento',
     pergunta:'E qual sua <b>data de nascimento</b>?', minIdade:16,
     msgIdade:'Parece que há algo errado com a data. Consegue verificar?' },
+
+  { id:'nacionalidade', tipo:'opcoes', grupo:'Dados pessoais', campo:'nacionalidade', rotulo:'Nacionalidade',
+    pergunta:'Qual a sua <b>nacionalidade</b>?', tituloOpcoes:'Nacionalidade',
+    opcoes:[{v:'Brasileira',label:'Brasileira'},{v:'Brasileira naturalizada',label:'Brasileira (naturalizada)'},{v:'Estrangeira',label:'Estrangeira'}] },
+
+  { id:'local_nascimento', tipo:'opcoes', grupo:'Dados pessoais', campo:'local_nascimento', rotulo:'Naturalidade (UF)',
+    pergunta:'Em qual <b>estado você nasceu</b>?', tituloOpcoes:'Estado de nascimento', grade:true, colunas:4,
+    opcoes:[...UFS.map(u => ({ v:u, label:u })), {v:'Exterior',label:'Outro país'}] },
+
+  { id:'titulo_numero', tipo:'texto', grupo:'Dados pessoais', campo:'titulo_numero', rotulo:'Título de eleitor — nº',
+    pergunta:'Qual o número do seu <b>Título de Eleitor</b>?', placeholder:'Ex.: 0000 0000 0000', teclado:'numeric',
+    opcional:true, textoPular:'Não tenho título ainda',
+    validar:v => so(v).length >= 10 || 'Confere o número do título, por favor.' },
+  { id:'titulo_zona', tipo:'texto', grupo:'Dados pessoais', campo:'titulo_zona', rotulo:'Título — zona',
+    condicao:d => !!d.titulo_numero,
+    pergunta:'E qual a <b>zona</b> eleitoral?', placeholder:'Ex.: 001', teclado:'numeric',
+    validar:v => so(v).length >= 1 || 'Me passa a zona.' },
+  { id:'titulo_secao', tipo:'texto', grupo:'Dados pessoais', campo:'titulo_secao', rotulo:'Título — seção',
+    condicao:d => !!d.titulo_numero,
+    pergunta:'E a <b>seção</b>?', placeholder:'Ex.: 0123', teclado:'numeric',
+    validar:v => so(v).length >= 1 || 'Me passa a seção.' },
 
   { id:'deficiencia', tipo:'opcoes', grupo:'Dados pessoais', campo:'deficiencia', rotulo:'Deficiência',
     pergunta:'Você tem alguma <b>deficiência</b>?', tituloOpcoes:'Deficiência',
