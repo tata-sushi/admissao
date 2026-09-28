@@ -614,6 +614,8 @@ a.opc{ text-decoration:none; display:block; }
      condicao → (dados) => boolean; se retornar false o passo é pulado
    ════════════════════════════════════════════════════════════════════ */
 
+const UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+
 const ROTEIRO = [
   /* ── Abertura ───────────────────────────────────── */
   { id:'abertura', tipo:'fala', grupo:'Boas-vindas', falas:[
@@ -673,6 +675,37 @@ const ROTEIRO = [
     pergunta:'Anotado! Agora, qual o número do seu <b>RG</b>?', placeholder:'00.000.000-0',
     validar:v => so(v).length >= 5 || 'Confere o número do RG, por favor.' },
 
+  { id:'sexo', tipo:'opcoes', grupo:'Dados pessoais', campo:'sexo', rotulo:'Sexo',
+    pergunta:'Qual <b>sexo</b> consta no seu documento?', tituloOpcoes:'Sexo',
+    opcoes:[{v:'M',label:'Masculino'},{v:'F',label:'Feminino'}] },
+
+  { id:'genero', tipo:'opcoes', grupo:'Dados pessoais', campo:'genero', rotulo:'Gênero',
+    pergunta:'Como você se identifica em relação ao <b>gênero</b>?', tituloOpcoes:'Gênero',
+    opcoes:[
+      {v:'mulher',label:'Mulher'},{v:'homem',label:'Homem'},
+      {v:'mulher_trans',label:'Mulher trans'},{v:'homem_trans',label:'Homem trans'},
+      {v:'nao_binaria',label:'Pessoa não binária'},{v:'outro',label:'Outro'},
+      {v:'nao_informar',label:'Prefiro não informar'}] },
+
+  { id:'nome_mae', tipo:'texto', grupo:'Dados pessoais', campo:'nome_mae', rotulo:'Nome da mãe',
+    pergunta:'Qual o <b>nome completo da sua mãe</b>?', placeholder:'Ex.: Maria Aparecida da Silva',
+    validar:v => v.trim().split(/\s+/).length >= 2 || 'Preciso do nome e do sobrenome.' },
+
+  { id:'consta_pai', tipo:'opcoes', grupo:'Dados pessoais', campo:'consta_pai', rotulo:'Consta nome do pai', ocultarRevisao:true,
+    pergunta:'No seu <b>RG</b> consta o <b>nome do seu pai</b>?', tituloOpcoes:'Consta o pai?',
+    opcoes:[{v:'sim',label:'Sim, consta'},{v:'nao',label:'Não consta'}] },
+  { id:'nome_pai', tipo:'texto', grupo:'Dados pessoais', campo:'nome_pai', rotulo:'Nome do pai',
+    condicao:d => d.consta_pai === 'sim',
+    pergunta:'Qual o <b>nome completo do seu pai</b>?', placeholder:'Ex.: José Carlos da Silva',
+    validar:v => v.trim().split(/\s+/).length >= 2 || 'Preciso do nome e do sobrenome.' },
+
+  { id:'raca_cor', tipo:'opcoes', grupo:'Dados pessoais', campo:'raca_cor', rotulo:'Raça/cor',
+    pergunta:'Como você se identifica em relação à sua <b>raça ou cor</b>?', tituloOpcoes:'Raça/cor',
+    opcoes:[
+      {v:'branca',label:'Branca'},{v:'preta',label:'Preta'},{v:'parda',label:'Parda'},
+      {v:'amarela',label:'Amarela'},{v:'indigena',label:'Indígena'},
+      {v:'nao_informar',label:'Prefiro não informar'}] },
+
   { id:'ctps_numero', tipo:'texto', grupo:'Dados pessoais', campo:'ctps_numero', rotulo:'CTPS (nº)',
     pergunta:'Perfeito! E o número da sua <b>Carteira de Trabalho (CTPS)</b>?', placeholder:'0000000 série 000',
     validar:v => v.trim().length >= 3 || 'Me passa o número da CTPS, por favor.' },
@@ -680,6 +713,40 @@ const ROTEIRO = [
   { id:'nascimento', tipo:'data', grupo:'Dados pessoais', campo:'nascimento', rotulo:'Data de nascimento',
     pergunta:'E qual sua <b>data de nascimento</b>?', minIdade:16,
     msgIdade:'Parece que há algo errado com a data. Consegue verificar?' },
+
+  { id:'deficiencia', tipo:'opcoes', grupo:'Dados pessoais', campo:'deficiencia', rotulo:'Deficiência',
+    pergunta:'Você tem alguma <b>deficiência</b>?', tituloOpcoes:'Deficiência',
+    opcoes:[{v:'sim',label:'Sim'},{v:'nao',label:'Não'},{v:'nao_informar',label:'Prefiro não informar'}] },
+  { id:'tipo_deficiencia', tipo:'opcoes', grupo:'Dados pessoais', campo:'tipo_deficiencia', rotulo:'Tipo de deficiência',
+    condicao:d => d.deficiencia === 'sim', tituloOpcoes:'Tipo de deficiência',
+    pergunta:'Qual é o <b>tipo de deficiência</b>?',
+    opcoes:[
+      {v:'fisica',label:'Física'},{v:'auditiva',label:'Auditiva'},{v:'visual',label:'Visual'},
+      {v:'intelectual',label:'Intelectual'},{v:'psicossocial',label:'Psicossocial'},
+      {v:'multipla',label:'Múltipla'},{v:'outra',label:'Outra'},
+      {v:'nao_informar',label:'Prefiro não informar'}] },
+
+  /* Certificado de reservista — só para quem tem "Masculino" no documento */
+  { id:'reservista_intro', tipo:'fala', grupo:'Dados pessoais', condicao:d => d.sexo === 'M', ocultarRevisao:true,
+    falas:[ 'Como consta <b>masculino</b> no seu documento, vou anotar os dados do seu <b>certificado de reservista</b>. 🪖' ] },
+  { id:'reservista_ra', tipo:'texto', grupo:'Dados pessoais', campo:'reservista_ra', rotulo:'Reservista — R.A', condicao:d => d.sexo === 'M',
+    pergunta:'Qual o <b>R.A</b> (número) do seu certificado de reservista?', placeholder:'Ex.: 123456789', teclado:'numeric',
+    validar:v => v.trim().length >= 3 || 'Confere o R.A, por favor.' },
+  { id:'reservista_expedicao', tipo:'data', grupo:'Dados pessoais', campo:'reservista_expedicao', rotulo:'Reservista — Data de expedição', condicao:d => d.sexo === 'M',
+    pergunta:'Qual a <b>data de expedição</b> do certificado?' },
+  { id:'reservista_uf', tipo:'opcoes', grupo:'Dados pessoais', campo:'reservista_uf', rotulo:'Reservista — UF', condicao:d => d.sexo === 'M',
+    pergunta:'Qual a <b>UF</b> do documento?', dica:'Se o documento não tiver, informe o estado onde foi emitido.',
+    tituloOpcoes:'UF', grade:true, colunas:4,
+    opcoes:UFS.map(u => ({ v:u, label:u })) },
+  { id:'reservista_tipo', tipo:'opcoes', grupo:'Dados pessoais', campo:'reservista_tipo', rotulo:'Reservista — Tipo de documento', condicao:d => d.sexo === 'M',
+    pergunta:'Qual o <b>tipo de documento militar</b>?', tituloOpcoes:'Tipo de documento militar',
+    opcoes:[
+      {v:'reservista',label:'Certificado de Reservista'},
+      {v:'cam',label:'Certificado de Alistamento Militar (CAM)'},
+      {v:'cdi',label:'Certificado de Dispensa de Incorporação (CDI)'},
+      {v:'isencao',label:'Certificado de Isenção'},
+      {v:'quitacao',label:'Certidão de Quitação com o Serviço Militar'},
+      {v:'outro',label:'Outro'}] },
 
   { id:'telefone', tipo:'texto', grupo:'Dados pessoais', campo:'telefone', rotulo:'WhatsApp',
     pergunta:() => (candidato.telefone && so(candidato.telefone).length >= 10)
@@ -826,6 +893,16 @@ const ROTEIRO = [
       : 'Recebido!' },
 
   /* (os documentos de cada dependente são gerados dinamicamente abaixo) */
+
+  { id:'doc_reservista', tipo:'upload', grupo:'Documentos', doc:'reservista', rotulo:'Certificado de reservista',
+    condicao:d => d.sexo === 'M',
+    pergunta:'Preciso também do seu <b>certificado de reservista</b> (frente e verso).',
+    recebido:'Recebido!' },
+
+  { id:'doc_deficiencia', tipo:'upload', grupo:'Documentos', doc:'deficiencia_doc', rotulo:'Laudo de deficiência', multiplo:true,
+    condicao:d => d.deficiencia === 'sim',
+    pergunta:'Como você indicou uma <b>deficiência</b>, preciso do seu <b>laudo médico</b> (ou documento que comprove).',
+    recebido:'Recebido!' },
 
   { id:'doc_banco', tipo:'upload', grupo:'Documentos', doc:'banco_doc', rotulo:'Comprovante bancário',
     condicao:d => d.conta_itau === 'sim',
