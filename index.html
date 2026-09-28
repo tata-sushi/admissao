@@ -211,6 +211,11 @@ button,[role=button]{ -webkit-user-select:none; user-select:none; }
 .pontos i{ width:6px; height:6px; border-radius:999px; background:rgb(var(--muted-2)); animation:pula 1.3s infinite ease-in-out; }
 .pontos i:nth-child(2){ animation-delay:.16s; } .pontos i:nth-child(3){ animation-delay:.32s; }
 @keyframes pula{ 0%,60%,100%{ transform:translateY(0); opacity:.45; } 30%{ transform:translateY(-4px); opacity:1; } }
+/* spinner de carregando (ex.: guardando documento) */
+.spin{ display:inline-block; width:14px; height:14px; vertical-align:-2px; margin-left:6px;
+  border:2px solid var(--line); border-top-color:rgb(var(--accent)); border-radius:50%;
+  animation:girar .7s linear infinite; }
+@keyframes girar{ to{ transform:rotate(360deg); } }
 
 /* anexo */
 .anexo{ display:flex; align-items:center; gap:11px; min-width:200px; }
@@ -1167,6 +1172,15 @@ function digitando(){
   elMsgs.appendChild(l); rolar();
   return l;
 }
+/* bolha com spinner de carregando (não fica parecendo que travou) */
+function bolhaCarregando(texto){
+  const l = document.createElement('div');
+  l.className = 'linha de-bot';
+  l.innerHTML = `<div class="av-bot">${avatarSara()}</div>
+                 <div class="bolha">${texto} <span class="spin"></span></div>`;
+  elMsgs.appendChild(l); rolar();
+  return l;
+}
 
 const espera = ms => new Promise(r => setTimeout(r, ms));
 
@@ -1509,7 +1523,7 @@ function comporUpload(p){
     elComp.innerHTML = '';
     await espera(300);
     if (MODO_REAL && TOKEN){                    /* sobe o arquivo pro Storage */
-      const guardando = bolhaBot('Guardando o documento com segurança… 🔒');
+      const guardando = bolhaCarregando('Guardando o documento com segurança 🔒');
       const ok = await subirDocumentos(p.doc, arqs, itens);
       guardando.remove();
       if (!ok){
@@ -1761,10 +1775,7 @@ async function concluir(){
     await falarBot(`Ficou pendente: <ul class="lista">${pendentes.map(d => `<li>${d}</li>`).join('')}</ul>`, false);
   }
 
-  elComp.innerHTML = `<div class="chips">
-      <button class="chip leve" id="recomecar">Recomeçar simulação</button>
-    </div>`;
-  $('#recomecar').addEventListener('click', reiniciar);
+  elComp.innerHTML = '';
   atualizarProgresso(null, true);
 }
 
