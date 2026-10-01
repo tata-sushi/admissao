@@ -735,16 +735,19 @@ const ROTEIRO = [
     pergunta:'Em qual <b>estado você nasceu</b>?', tituloOpcoes:'Estado de nascimento', grade:true, colunas:4,
     opcoes:[...UFS.map(u => ({ v:u, label:u })), {v:'Exterior',label:'Outro país'}] },
 
+  { id:'tem_titulo', tipo:'opcoes', grupo:'Dados pessoais', campo:'tem_titulo', rotulo:'Possui título de eleitor',
+    pergunta:'Você possui <b>título de eleitor</b>?', tituloOpcoes:'Título de eleitor',
+    opcoes:[{v:'sim',label:'Sim'},{v:'nao',label:'Não'}] },
   { id:'titulo_numero', tipo:'texto', grupo:'Dados pessoais', campo:'titulo_numero', rotulo:'Título de eleitor — nº',
+    condicao:d => d.tem_titulo === 'sim',
     pergunta:'Qual o número do seu <b>Título de Eleitor</b>?', placeholder:'Ex.: 0000 0000 0000', teclado:'numeric',
-    opcional:true, textoPular:'Não tenho título ainda',
     validar:v => so(v).length >= 10 || 'Confere o número do título, por favor.' },
   { id:'titulo_zona', tipo:'texto', grupo:'Dados pessoais', campo:'titulo_zona', rotulo:'Título — zona',
-    condicao:d => !!d.titulo_numero,
+    condicao:d => d.tem_titulo === 'sim',
     pergunta:'E qual a <b>zona</b> eleitoral?', placeholder:'Ex.: 001', teclado:'numeric',
     validar:v => so(v).length >= 1 || 'Me passa a zona.' },
   { id:'titulo_secao', tipo:'texto', grupo:'Dados pessoais', campo:'titulo_secao', rotulo:'Título — seção',
-    condicao:d => !!d.titulo_numero,
+    condicao:d => d.tem_titulo === 'sim',
     pergunta:'E a <b>seção</b>?', placeholder:'Ex.: 0123', teclado:'numeric',
     validar:v => so(v).length >= 1 || 'Me passa a seção.' },
 
@@ -761,16 +764,19 @@ const ROTEIRO = [
       {v:'nao_informar',label:'Prefiro não informar'}] },
 
   /* Certificado de reservista — só para quem tem "Masculino" no documento */
-  { id:'reservista_ra', tipo:'texto', grupo:'Dados pessoais', campo:'reservista_ra', rotulo:'Reservista — R.A', condicao:d => d.sexo === 'M',
+  { id:'tem_reservista', tipo:'opcoes', grupo:'Dados pessoais', campo:'tem_reservista', rotulo:'Possui reservista', condicao:d => d.sexo === 'M',
+    pergunta:'Você possui <b>certificado de reservista</b> (ou outro documento militar)?', tituloOpcoes:'Documento militar',
+    opcoes:[{v:'sim',label:'Sim'},{v:'nao',label:'Não'}] },
+  { id:'reservista_ra', tipo:'texto', grupo:'Dados pessoais', campo:'reservista_ra', rotulo:'Reservista — R.A', condicao:d => d.sexo === 'M' && d.tem_reservista === 'sim',
     pergunta:'Qual o <b>R.A</b> (número) do seu certificado de reservista?', placeholder:'Ex.: 123456789', teclado:'numeric',
     validar:v => v.trim().length >= 3 || 'Confere o R.A, por favor.' },
-  { id:'reservista_expedicao', tipo:'data', grupo:'Dados pessoais', campo:'reservista_expedicao', rotulo:'Reservista — Data de expedição', condicao:d => d.sexo === 'M',
+  { id:'reservista_expedicao', tipo:'data', grupo:'Dados pessoais', campo:'reservista_expedicao', rotulo:'Reservista — Data de expedição', condicao:d => d.sexo === 'M' && d.tem_reservista === 'sim',
     pergunta:'Qual a <b>data de expedição</b> do certificado?' },
-  { id:'reservista_uf', tipo:'opcoes', grupo:'Dados pessoais', campo:'reservista_uf', rotulo:'Reservista — UF', condicao:d => d.sexo === 'M',
+  { id:'reservista_uf', tipo:'opcoes', grupo:'Dados pessoais', campo:'reservista_uf', rotulo:'Reservista — UF', condicao:d => d.sexo === 'M' && d.tem_reservista === 'sim',
     pergunta:'Qual <b>estado de emissão</b> do documento?',
     tituloOpcoes:'UF', grade:true, colunas:4,
     opcoes:UFS.map(u => ({ v:u, label:u })) },
-  { id:'reservista_tipo', tipo:'opcoes', grupo:'Dados pessoais', campo:'reservista_tipo', rotulo:'Reservista — Tipo de documento', condicao:d => d.sexo === 'M',
+  { id:'reservista_tipo', tipo:'opcoes', grupo:'Dados pessoais', campo:'reservista_tipo', rotulo:'Reservista — Tipo de documento', condicao:d => d.sexo === 'M' && d.tem_reservista === 'sim',
     pergunta:'Qual o <b>tipo de documento militar</b>?', tituloOpcoes:'Tipo de documento militar',
     opcoes:[
       {v:'reservista',label:'Certificado de Reservista'},
@@ -931,7 +937,7 @@ const ROTEIRO = [
   /* (os documentos de cada dependente são gerados dinamicamente abaixo) */
 
   { id:'doc_reservista', tipo:'upload', grupo:'Documentos', doc:'reservista', rotulo:'Certificado de reservista',
-    condicao:d => d.sexo === 'M',
+    condicao:d => d.sexo === 'M' && d.tem_reservista === 'sim',
     pergunta:'Preciso também do seu <b>certificado de reservista</b> (frente e verso).',
     recebido:'Recebido!' },
 
