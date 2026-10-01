@@ -673,7 +673,7 @@ const ROTEIRO = [
 
   { id:'estrangeiro', tipo:'opcoes', grupo:'Dados pessoais', campo:'estrangeiro', rotulo:'Estrangeiro(a)',
     pergunta:'Anotado! Você é <b>estrangeiro(a)</b>?', tituloOpcoes:'É estrangeiro(a)?',
-    opcoes:[{v:'nao',label:'Não'},{v:'sim',label:'Sim'}] },
+    opcoes:[{v:'não',label:'Não'},{v:'sim',label:'Sim'}] },
   { id:'rg_numero', tipo:'texto', grupo:'Dados pessoais', campo:'rg_numero', rotulo:'Documento de identidade',
     pergunta:'Qual o seu <b>documento de identidade (RG, RIC ou RNE)</b>?', placeholder:'Número do documento',
     validar:v => v.trim().length >= 4 || 'Confere o número, por favor.' },
@@ -800,7 +800,7 @@ const ROTEIRO = [
 
   { id:'email', tipo:'texto', grupo:'Dados pessoais', campo:'email', rotulo:'E-mail',
     pergunta:'Obrigada! Quanto ao seu <b>e-mail</b>, eu ainda não tenho. Me informe, por favor!?',
-    placeholder:'voce@email.com', teclado:'email',
+    placeholder:'voce@email.com', teclado:'email', mascara:'email',
     validar:v => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v.trim()) || 'Esse e-mail não parece certo. Consegue revisar?<br>Coloque só o e-mail.' },
 
   { id:'estado_civil', tipo:'opcoes', grupo:'Dados pessoais', campo:'estado_civil', rotulo:'Estado civil',
@@ -1196,6 +1196,7 @@ const MASCARAS = {
     const val = (parseInt(n, 10) / 100).toFixed(2);
     return 'R$ ' + val.replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   },
+  email: v => (v || '').toLowerCase().replace(/\s+/g, ''),   /* e-mail sempre minúsculo e sem espaços */
   banco: v => (v || '').replace(/[^0-9-]/g, '').slice(0, 20),   /* agência/conta: só números e "-" */
   pis: v => { const n = so(v).slice(0,11); let r = n;   /* PIS/NIS: 000.00000.00-0 */
     if (n.length > 3)  r = n.slice(0,3) + '.' + n.slice(3);
