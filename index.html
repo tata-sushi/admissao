@@ -731,9 +731,16 @@ const ROTEIRO = [
     pergunta:'Qual a sua <b>nacionalidade</b>?', tituloOpcoes:'Nacionalidade',
     opcoes:[{v:'Brasileira',label:'Brasileira'},{v:'Brasileira naturalizada',label:'Brasileira (naturalizada)'},{v:'Estrangeira',label:'Estrangeira'}] },
 
-  { id:'local_nascimento', tipo:'opcoes', grupo:'Dados pessoais', campo:'local_nascimento', rotulo:'Naturalidade (UF)',
+  { id:'nasc_uf', tipo:'opcoes', grupo:'Dados pessoais', campo:'nasc_uf', rotulo:'Naturalidade (UF)', ocultarRevisao:true,
     pergunta:'Em qual <b>estado você nasceu</b>?', tituloOpcoes:'Estado de nascimento', grade:true, colunas:4,
     opcoes:[...UFS.map(u => ({ v:u, label:u })), {v:'Exterior',label:'Outro país'}] },
+  { id:'local_nascimento', tipo:'municipio', grupo:'Dados pessoais', campo:'local_nascimento', rotulo:'Naturalidade',
+    ufCampo:'nasc_uf', condicao:d => d.nasc_uf && d.nasc_uf !== 'Exterior',
+    pergunta:'Em qual <b>município</b> você nasceu?' },
+  { id:'local_nascimento_ext', tipo:'texto', grupo:'Dados pessoais', campo:'local_nascimento', rotulo:'Naturalidade',
+    condicao:d => d.nasc_uf === 'Exterior',
+    pergunta:'Em qual <b>cidade e país</b> você nasceu?', placeholder:'Ex.: Lisboa/Portugal',
+    validar:v => v.trim().length >= 2 || 'Me diz a cidade e o país, por favor.' },
 
   { id:'tem_titulo', tipo:'opcoes', grupo:'Dados pessoais', campo:'tem_titulo', rotulo:'Possui título de eleitor',
     pergunta:'Você possui <b>título de eleitor</b>?', tituloOpcoes:'Título de eleitor',
@@ -1351,6 +1358,7 @@ async function rodar(){
   if (passo.tipo === 'texto')   return comporTexto(passo);
   if (passo.tipo === 'data')    return comporData(passo);
   if (passo.tipo === 'cidade')  return comporCidade(passo);
+  if (passo.tipo === 'municipio') return comporMunicipio(passo);
   if (passo.tipo === 'opcoes')  return comporOpcoes(passo);
   if (passo.tipo === 'upload')  return comporUpload(passo);
   if (passo.tipo === 'proposta')return comporProposta(passo);
@@ -1442,6 +1450,48 @@ function comporCidade(p){
   };
   elComp.innerHTML = `<div class="campo-linha"><input class="campo" id="entrada" placeholder="Carregando cidades…" disabled><button class="enviar" disabled aria-label="Enviar">${ICO.enviar}</button></div>`;
   carregarCidadesSP().then(cs => render(cs)).catch(() => render(null));
+}
+
+/* ── Composer: município por UF (naturalidade) — salva "Município/UF" ─── */
+const _municipiosUF = {};
+async function carregarMunicipios(uf){
+  if (_municipiosUF[uf]) return _municipiosUF[uf];
+  const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios?orderBy=nome`);
+  const j = await r.json();
+  _municipiosUF[uf] = j.map(m => m.nome);
+  return _municipiosUF[uf];
+}
+function comporMunicipio(p){
+  const uf = estado.dados[p.ufCampo] || '';
+  const render = (cidades) => {
+    const usarLista = cidades && cidades.length;
+    elComp.innerHTML = `
+      <div class="campo-linha">
+        ${usarLista
+          ? `<select class="campo campo-select" id="entrada"><option value="">Selecione o município…</option>${cidades.map(c => `<option value="${escapar(c)}">${escapar(c)} / ${uf}</option>`).join('')}</select>`
+          : `<input class="campo" id="entrada" autocomplete="off" placeholder="${p.placeholder || 'Ex.: São Paulo'}">`}
+        <button class="enviar" id="btn-enviar" disabled aria-label="Enviar">${ICO.enviar}</button>
+      </div>`;
+    const el = $('#entrada'), btn = $('#btn-enviar');
+    const chk = () => { btn.disabled = (el.value || '').trim().length < 2; };
+    el.addEventListener('change', chk);
+    el.addEventListener('input', chk);
+    async function enviar(){
+      const raw = (el.value || '').trim();
+      if (raw.length < 2) return;
+      const municipio = usarLista ? raw : raw.replace(new RegExp(`\\s*/\\s*${uf}\\s*$`, 'i'), '').trim();
+      const val = `${municipio}/${uf}`;
+      bolhaUser(val);
+      estado.dados[p.campo] = val;
+      elComp.innerHTML = '';
+      await espera(200);
+      avancar();
+    }
+    btn.addEventListener('click', enviar);
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' && !btn.disabled) enviar(); });
+  };
+  elComp.innerHTML = `<div class="campo-linha"><input class="campo" id="entrada" placeholder="Carregando municípios…" disabled><button class="enviar" disabled aria-label="Enviar">${ICO.enviar}</button></div>`;
+  carregarMunicipios(uf).then(cs => render(cs)).catch(() => render(null));
 }
 
 function montarPergunta(p){
