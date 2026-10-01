@@ -1978,6 +1978,14 @@ function payload(){
   });
   const dados = { ...estado.dados };
   delete dados._inicio;
+  /* grava o texto por extenso (label) de cada campo de opção, não o código interno
+     — a lógica do fluxo continua usando os códigos; só o que é salvo fica legível */
+  ROTEIRO.forEach(s => {
+    if (s.tipo === 'opcoes' && s.campo && dados[s.campo] != null){
+      const o = (s.opcoes || []).find(x => x.v === dados[s.campo]);
+      if (o) dados[s.campo] = o.label;
+    }
+  });
   /* proposta + aceite vão gravados no grupo "trabalho" (admissao_respostas) */
   const proposta = {
     grupo:'trabalho', campo:'proposta',
