@@ -813,8 +813,8 @@ const ROTEIRO = [
   { id:'estado_civil', tipo:'opcoes', grupo:'Dados pessoais', campo:'estado_civil', rotulo:'Estado civil',
     pergunta:'Qual o seu <b>estado civil</b>?',
     tituloOpcoes:'Qual seu estado civil?',
-    opcoes:[{v:'solteiro',label:'Solteiro(a)'},{v:'casado',label:'Casado(a)'},
-            {v:'uniao',label:'União estável'},{v:'divorciado',label:'Divorciado(a)'},{v:'viuvo',label:'Viúvo(a)'}] },
+    opcoes:[{v:'Solteiro(a)',label:'Solteiro(a)'},{v:'Casado(a)',label:'Casado(a)'},
+            {v:'União estável',label:'União estável'},{v:'Divorciado(a)',label:'Divorciado(a)'},{v:'Viúvo(a)',label:'Viúvo(a)'}] },
 
   { id:'dependentes', tipo:'opcoes', grupo:'Dados pessoais', campo:'tem_dependentes', rotulo:'Tem dependentes',
     pergunta:'Você tem <b>filhos ou dependentes</b> menores de 14 anos para fins de salário-família e imposto de renda?',
@@ -856,8 +856,9 @@ const ROTEIRO = [
   { id:'escolaridade', tipo:'opcoes', grupo:'Trabalho e uniforme', campo:'escolaridade', rotulo:'Escolaridade',
     pergunta:'Parabéns!!!<br>Já preenchemos bastante coisa.<br>Agora, vamos para a sua formação. Qual sua <b>escolaridade</b>?',
     opcoes:[{v:'Fundamental incompleto',label:'Fundamental incompleto'},{v:'Fundamental completo',label:'Fundamental completo'},
-            {v:'Médio incompleto',label:'Médio incompleto'},{v:'Médio completo',label:'Médio completo'},
-            {v:'Superior incompleto',label:'Superior incompleto'},{v:'Superior completo',label:'Superior completo'}] },
+            {v:'Ensino Médio incompleto',label:'Ensino Médio incompleto'},{v:'Ensino Médio completo',label:'Ensino Médio completo'},
+            {v:'Superior incompleto',label:'Superior incompleto'},{v:'Superior completo',label:'Superior completo'},
+            {v:'Pós-graduação completa',label:'Pós-graduação completa'}] },
 
   { id:'camiseta', tipo:'opcoes', grupo:'Trabalho e uniforme', campo:'tam_camiseta', rotulo:'Tamanho da camiseta',
     pergunta:() => `${primeiroNome() ? primeiroNome() + ', chegou' : 'Chegou'} a hora de preparar o seu uniforme!<br>Qual o tamanho da sua <b>camiseta</b>?`,
