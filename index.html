@@ -1689,6 +1689,9 @@ function comporUpload(p){
       nome:a.name, tamanho:a.size, tipo:a.type,
       url:a.type.startsWith('image/') ? URL.createObjectURL(a) : null
     }));
+    /* nome de identificação do documento (vai pro Storage e pro nome_arquivo no banco) */
+    const nomeColab = (estado.dados.nome || candidato.nome || '').trim();
+    itens.forEach((it, idx) => { it.nomeDoc = comporNomeDoc(p.rotulo, nomeColab, it.nome, idx, itens.length); });
     itens.forEach(it => bolhaUser(`
       <div class="anexo">
         ${it.url ? `<img class="prev" src="${it.url}" alt="">`
@@ -1715,6 +1718,17 @@ function comporUpload(p){
   }
 }
 
+/* Nome com que o arquivo é salvo: "<identificação do documento> - <nome do colaborador>.<ext>"
+   (ex.: "RG ou CNH - Victor Augusto.jpg", "Comprovante de residência - Victor Augusto.pdf") */
+function comporNomeDoc(rotulo, nome, originalName, idx, total){
+  const extM = String(originalName || '').match(/\.[a-zA-Z0-9]{1,8}$/);
+  const ext  = extM ? extM[0].toLowerCase() : '';
+  const base = [String(rotulo || '').trim(), String(nome || '').trim()].filter(Boolean).join(' - ')
+               || String(originalName || 'arquivo').replace(/\.[^.]*$/, '');
+  const suf  = total > 1 ? ` (${idx + 1})` : '';
+  return `${base}${suf}${ext}`;
+}
+
 const tamanho = b => b < 1024*1024 ? `${Math.max(1, Math.round(b/1024))} KB` : `${(b/1048576).toFixed(1)} MB`;
 const escapar = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
@@ -1729,7 +1743,7 @@ function salvarLocal(){
     const arqs = {};
     Object.entries(estado.arquivos || {}).forEach(([k, a]) => {
       arqs[k] = { pulado:a.pulado, rotulo:a.rotulo,
-        itens:(a.itens || []).map(i => ({ nome:i.nome, tamanho:i.tamanho, tipo:i.tipo,
+        itens:(a.itens || []).map(i => ({ nome:i.nome, nomeDoc:i.nomeDoc || null, tamanho:i.tamanho, tipo:i.tipo,
           bucket:i.bucket || null, path:i.path || null, enviado:i.enviado === true })) };
     });
     localStorage.setItem(_lsKey(), JSON.stringify({ v:LS_VER, i:estado.i, dados:estado.dados, arquivos:arqs, ts:Date.now() }));
@@ -1761,7 +1775,7 @@ async function subirDocumentos(doc, arqs, itens){
     try {
       const meta = await fetch(API_DOC_URL, {
         method:'POST', headers:{ 'Content-Type':'application/json' },
-        body: JSON.stringify({ token:TOKEN, cpf4, doc, filename:f.name, contentType:f.type })
+        body: JSON.stringify({ token:TOKEN, cpf4, doc, filename:(itens[i].nomeDoc || f.name), contentType:f.type })
       }).then(r => r.json());
       if (!meta || !meta.ok || !meta.signedUrl) throw new Error((meta && meta.motivo) || 'sem_url');
       const put = await fetch(meta.signedUrl, {
@@ -1972,7 +1986,7 @@ function payload(){
     docs[k] = {
       rotulo:a.rotulo,
       status:a.pulado ? 'pendente' : 'recebido',
-      arquivos:a.itens.map(i => ({ nome:i.nome, tipo:i.tipo, tamanho_bytes:i.tamanho,
+      arquivos:a.itens.map(i => ({ nome:(i.nomeDoc || i.nome), tipo:i.tipo, tamanho_bytes:i.tamanho,
         bucket:i.bucket || null, path:i.path || null, enviado:i.enviado === true }))
     };
   });
