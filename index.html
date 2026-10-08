@@ -677,6 +677,32 @@ const ROTEIRO = [
   { id:'rg_numero', tipo:'texto', grupo:'Dados pessoais', campo:'rg_numero', rotulo:'Documento de identidade',
     pergunta:'Qual o seu <b>documento de identidade (RG, RIC ou RNE)</b>?', placeholder:'Número do documento',
     validar:v => v.trim().length >= 4 || 'Confere o número, por favor.' },
+  { id:'rg_expedicao', tipo:'data', grupo:'Dados pessoais', campo:'rg_expedicao', rotulo:'RG — data de expedição',
+    pergunta:'Qual a <b>data de expedição</b> do documento?' },
+  { id:'rg_orgao', tipo:'opcoes', grupo:'Dados pessoais', campo:'rg_orgao', rotulo:'RG — órgão expedidor',
+    pergunta:'Qual o <b>órgão expedidor</b> do documento?', tituloOpcoes:'Órgão expedidor',
+    opcoes:[
+      {v:'SSP',label:'SSP'},
+      {v:'DETRAN',label:'DETRAN'},
+      {v:'Polícia Federal',label:'Polícia Federal'},
+      {v:'Polícia Civil',label:'Polícia Civil'},
+      {v:'Polícia Militar',label:'Polícia Militar'},
+      {v:'Exército',label:'Exército'},
+      {v:'Marinha',label:'Marinha'},
+      {v:'Aeronáutica',label:'Aeronáutica'},
+      {v:'IFP',label:'IFP'},
+      {v:'CNH',label:'CNH (Detran)'},
+      {v:'OAB',label:'OAB'},
+      {v:'CRM',label:'CRM'},
+      {v:'CREA',label:'CREA'},
+      {v:'Outro',label:'Outro'} ] },
+  { id:'rg_orgao_outro', tipo:'texto', grupo:'Dados pessoais', campo:'rg_orgao_outro', rotulo:'RG — órgão (outro)',
+    condicao:d => d.rg_orgao === 'Outro',
+    pergunta:'Qual a <b>sigla do órgão</b> expedidor?', placeholder:'Ex.: SDS, ITEP, DIC…',
+    validar:v => v.trim().length >= 2 || 'Me diz o órgão, por favor.' },
+  { id:'rg_uf', tipo:'opcoes', grupo:'Dados pessoais', campo:'rg_uf', rotulo:'RG — UF de expedição',
+    pergunta:'E qual o <b>estado (UF) de expedição</b> do documento?', tituloOpcoes:'UF do RG', grade:true, colunas:4,
+    opcoes:UFS.map(u => ({ v:u, label:u })) },
 
   { id:'sexo', tipo:'opcoes', grupo:'Dados pessoais', campo:'sexo', rotulo:'Sexo',
     pergunta:'Qual <b>sexo</b> consta no seu documento?', tituloOpcoes:'Sexo',
@@ -716,6 +742,8 @@ const ROTEIRO = [
   { id:'ctps_uf', tipo:'opcoes', grupo:'Dados pessoais', campo:'ctps_uf', rotulo:'UF de emissão da CTPS',
     pergunta:'Qual a <b>UF de emissão</b> da sua CTPS?', tituloOpcoes:'UF da CTPS', grade:true, colunas:4,
     opcoes:UFS.map(u => ({ v:u, label:u })) },
+  { id:'ctps_emissao', tipo:'data', grupo:'Dados pessoais', campo:'ctps_emissao', rotulo:'Data de emissão da CTPS',
+    pergunta:'E qual a <b>data de emissão</b> da sua CTPS?' },
 
   { id:'pis_numero', tipo:'texto', grupo:'Dados pessoais', campo:'pis_numero', rotulo:'PIS/NIS',
     pergunta:'E o número do seu <b>PIS/PASEP (NIS)</b>?<br>Você consegue no site <span class="grifo">cidadao.caixa.gov.br → Acesse o Portal → login com CPF → Meu NIS → Sobre meu NIS</span>.<br>Se não tiver, me fale!',
@@ -952,6 +980,11 @@ const ROTEIRO = [
   { id:'doc_deficiencia', tipo:'upload', grupo:'Documentos', doc:'deficiencia_doc', rotulo:'Laudo de deficiência', multiplo:true,
     condicao:d => d.deficiencia === 'sim',
     pergunta:'Como você indicou uma <b>deficiência</b>, preciso do seu <b>laudo médico</b> (ou documento que comprove).',
+    recebido:'Recebido!' },
+
+  { id:'doc_casamento', tipo:'upload', grupo:'Documentos', doc:'casamento_doc', rotulo:'Certidão de casamento',
+    condicao:d => d.estado_civil === 'Casado(a)',
+    pergunta:'Como você é <b>casado(a)</b>, preciso também da sua <b>certidão de casamento</b>.',
     recebido:'Recebido!' },
 
   { id:'doc_banco', tipo:'upload', grupo:'Documentos', doc:'banco_doc', rotulo:'Comprovante bancário',
@@ -2000,6 +2033,8 @@ function payload(){
       if (o) dados[s.campo] = o.label;
     }
   });
+  /* PIS/NIS gravado só com números (sem pontuação) */
+  if (dados.pis_numero) dados.pis_numero = so(dados.pis_numero);
   /* proposta + aceite vão gravados no grupo "trabalho" (admissao_respostas) */
   const proposta = {
     grupo:'trabalho', campo:'proposta',
