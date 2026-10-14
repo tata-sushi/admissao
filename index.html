@@ -745,12 +745,6 @@ const ROTEIRO = [
   { id:'ctps_emissao', tipo:'data', grupo:'Dados pessoais', campo:'ctps_emissao', rotulo:'Data de emissão da CTPS',
     pergunta:'E qual a <b>data de emissão</b> da sua CTPS?' },
 
-  { id:'pis_numero', tipo:'texto', grupo:'Dados pessoais', campo:'pis_numero', rotulo:'PIS/NIS',
-    pergunta:'E o número do seu <b>PIS/PASEP (NIS)</b>?<br>Você consegue no site <span class="grifo">cidadao.caixa.gov.br → Acesse o Portal → login com CPF → Meu NIS → Sobre meu NIS</span>.<br>Se não tiver, me fale!',
-    placeholder:'000.00000.00-0', mascara:'pis', teclado:'numeric',
-    opcional:true, textoPular:'Não tenho PIS, é meu primeiro emprego',
-    validar:v => so(v).length === 11 || 'O PIS/NIS tem 11 números.' },
-
   { id:'nascimento', tipo:'data', grupo:'Dados pessoais', campo:'nascimento', rotulo:'Data de nascimento',
     pergunta:'E qual sua <b>data de nascimento</b>?', minIdade:16,
     msgIdade:'Parece que há algo errado com a data. Consegue verificar?' },
@@ -769,22 +763,6 @@ const ROTEIRO = [
     condicao:d => d.nasc_uf === 'Exterior',
     pergunta:'Em qual <b>cidade e país</b> você nasceu?', placeholder:'Ex.: Lisboa/Portugal',
     validar:v => v.trim().length >= 2 || 'Me diz a cidade e o país, por favor.' },
-
-  { id:'tem_titulo', tipo:'opcoes', grupo:'Dados pessoais', campo:'tem_titulo', rotulo:'Possui título de eleitor',
-    pergunta:'Você possui <b>título de eleitor</b>?', tituloOpcoes:'Título de eleitor',
-    opcoes:[{v:'sim',label:'Sim'},{v:'nao',label:'Não'}] },
-  { id:'titulo_numero', tipo:'texto', grupo:'Dados pessoais', campo:'titulo_numero', rotulo:'Título de eleitor — nº',
-    condicao:d => d.tem_titulo === 'sim',
-    pergunta:'Qual o número do seu <b>Título de Eleitor</b>?', placeholder:'Ex.: 0000 0000 0000', teclado:'numeric',
-    validar:v => so(v).length >= 10 || 'Confere o número do título, por favor.' },
-  { id:'titulo_zona', tipo:'texto', grupo:'Dados pessoais', campo:'titulo_zona', rotulo:'Título — zona',
-    condicao:d => d.tem_titulo === 'sim',
-    pergunta:'E qual a <b>zona</b> eleitoral?', placeholder:'Ex.: 001', teclado:'numeric',
-    validar:v => so(v).length >= 1 || 'Me passa a zona.' },
-  { id:'titulo_secao', tipo:'texto', grupo:'Dados pessoais', campo:'titulo_secao', rotulo:'Título — seção',
-    condicao:d => d.tem_titulo === 'sim',
-    pergunta:'E a <b>seção</b>?', placeholder:'Ex.: 0123', teclado:'numeric',
-    validar:v => so(v).length >= 1 || 'Me passa a seção.' },
 
   { id:'deficiencia', tipo:'opcoes', grupo:'Dados pessoais', campo:'deficiencia', rotulo:'Deficiência',
     pergunta:'Você tem alguma <b>deficiência</b>?', tituloOpcoes:'Deficiência',
@@ -959,10 +937,6 @@ const ROTEIRO = [
     recebido:'Recebido! Agora, me mande o PDF ou foto da <b>Carteira de Trabalho</b> física ou digital.<br>Você consegue baixando o app <span class="grifo">Carteira de Trabalho Digital → Contratos → Compartilhar</span>.' },
 
   { id:'doc_ctps', tipo:'upload', grupo:'Documentos', doc:'ctps', rotulo:'Carteira de Trabalho digital',
-    recebido:'Recebido! Agora, uma foto ou print do seu <b>PIS/PASEP (NIS)</b>.<br>Você consegue no site <span class="grifo">cidadao.caixa.gov.br → Acesse o Portal → login com CPF → Meu NIS → Sobre meu NIS</span> e tirando um print do <b>Número de Identificação Social</b>.<br>Se não tiver, me fale!' },
-
-  { id:'doc_pis', tipo:'upload', grupo:'Documentos', doc:'pis_doc', rotulo:'Documento do PIS/NIS',
-    opcional:true, textoPular:'Vou emitir e anexar depois',
     recebido:() => `Recebido! ${primeiroNome() ? primeiroNome() + ', agora' : 'Agora'} o seu <b>comprovante de escolaridade</b> (pode ser histórico escolar ou certificado de conclusão).` },
 
   { id:'doc_escolaridade', tipo:'upload', grupo:'Documentos', doc:'escolaridade_doc', rotulo:'Comprovante de escolaridade',
