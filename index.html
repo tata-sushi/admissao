@@ -926,8 +926,13 @@ const ROTEIRO = [
       'Para anexar os documentos, você pode fotografar ou anexar do seu celular. Só cuidado para não cortar a imagem ou deixar com reflexo.<br>Os tipos de arquivo que aceito são: JPG, PNG ou PDF, até 10 MB.'
     ]},
 
-  { id:'doc_identidade', tipo:'upload', grupo:'Documentos', doc:'identidade', rotulo:'RG ou CNH', multiplo:true,
-    pergunta:'Vamos começar com a foto do seu <b>RG (frente e verso)</b>. Pode ser <b>CNH (aberta)</b>.',
+  { id:'doc_identidade_frente', tipo:'upload', grupo:'Documentos', doc:'identidade_frente', rotulo:'RG (frente)',
+    pergunta:'Vamos começar com a foto da <b>FRENTE do seu RG</b> (o lado com a sua foto).<br>Se for <b>CNH</b>, pode mandar ela <b>aberta</b> (com os dois lados).',
+    recebido:'Recebido! Agora, a foto do <b>VERSO do seu RG</b> (a parte de trás), por favor.' },
+
+  { id:'doc_identidade_verso', tipo:'upload', grupo:'Documentos', doc:'identidade_verso', rotulo:'RG (verso)',
+    opcional:true, textoPular:'É CNH aberta (já mandei os dois lados)',
+    pergunta:'Agora a foto do <b>VERSO do seu RG</b> (a parte de trás).',
     recebido:'Recebido! Agora, vamos para o <b>CPF</b>. Pode ser a CNH também.' },
 
   { id:'doc_cpf', tipo:'upload', grupo:'Documentos', doc:'cpf_doc', rotulo:'CPF',
