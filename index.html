@@ -1345,7 +1345,10 @@ let grupoAtual = 'Boas-vindas'; /* a abertura não precisa de divisor */
 async function rodar(){
   elComp.innerHTML = '';
   const lista = visiveis();
-  if (estado.i >= lista.length) return;
+  if (!lista.length) return;
+  /* nunca encerra em branco: índice fora do range cai no último passo (fim → conclui) */
+  if (estado.i >= lista.length) estado.i = lista.length - 1;
+  if (estado.i < 0) estado.i = 0;
   const passo = lista[estado.i];
 
   /* sem separadores de seção na conversa — o fluxo corre contínuo */
@@ -1758,7 +1761,8 @@ function salvarLocal(){
         itens:(a.itens || []).map(i => ({ nome:i.nome, nomeDoc:i.nomeDoc || null, tamanho:i.tamanho, tipo:i.tipo,
           bucket:i.bucket || null, path:i.path || null, enviado:i.enviado === true })) };
     });
-    localStorage.setItem(_lsKey(), JSON.stringify({ v:LS_VER, i:estado.i, dados:estado.dados, arquivos:arqs, ts:Date.now() }));
+    const stepId = (visiveis()[estado.i] || {}).id || null;   /* id do passo: resume robusto a mudanças no roteiro */
+    localStorage.setItem(_lsKey(), JSON.stringify({ v:LS_VER, i:estado.i, stepId, dados:estado.dados, arquivos:arqs, ts:Date.now() }));
   } catch(e){}
 }
 function carregarLocal(){
@@ -2160,7 +2164,11 @@ async function retomarOuRecomecar(salvo){
     if (o.v === 'continuar'){
       estado.dados = salvo.dados || {};
       estado.arquivos = salvo.arquivos || {};
-      estado.i = Math.min(salvo.i | 0, visiveis().length);
+      const lista = visiveis();
+      /* retoma pelo id do passo (robusto se o roteiro mudou entre sessões); cai no índice como reserva */
+      let idx = salvo.stepId ? lista.findIndex(s => s.id === salvo.stepId) : -1;
+      if (idx < 0) idx = (salvo.i | 0);
+      estado.i = Math.max(0, Math.min(idx, lista.length - 1));
       salvarLocal();
       await falarBot('Show! Vamos continuar de onde paramos. 👇');
       rodar();
